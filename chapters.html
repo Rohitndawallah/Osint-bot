@@ -47,7 +47,7 @@
 
         async function loadChapters() {
             const container = document.getElementById('chaptersContainer');
-            const targetApi = `/api/PW/all-batches-api3?batch_id=${encodeURIComponent(bId)}&subject_id=${encodeURIComponent(sId)}`;
+            const targetApi = `https://devcoderz-pw.vercel.app/api/PW/all-batches-api3?batch_id=${encodeURIComponent(bId)}&subject_id=${encodeURIComponent(sId)}`;
 
             try {
                 const res = await fetch(targetApi);
