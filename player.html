@@ -35,7 +35,7 @@
         const shakaPlayer = new shaka.Player(video);
 
         try {
-            const response = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=\( {batchId}&lectureId= \){videoId}`);
+            const response = await fetch(`https://pw.modgalaxy.in/video-api?batchId=${encodeURIComponent(batchId)}&lectureId=${encodeURIComponent(lectureId)
             const data = await response.json();
 
             if (!data.success || !data.url) {
