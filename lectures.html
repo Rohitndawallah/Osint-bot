@@ -10,17 +10,18 @@
         .notes-view-btn { background: #4f46e5; color: white; padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
-<body class="bg-gray-50 pb-16" oncontextmenu="return false;">
+<body class="bg-gray-50 pb-16">
     <nav class="h-16 bg-white border-b flex items-center px-4 sticky top-0 z-20">
         <button onclick="history.back()" class="text-gray-600 font-bold text-sm">← Back</button>
         <h1 class="ml-4 font-bold text-gray-800">Content</h1>
     </nav>
     <div id="tabsContainer" class="flex gap-2 p-4 overflow-x-auto bg-white border-b sticky top-16 z-10">
-        <button onclick="loadContent('videos', this)" class="tab-btn active px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
+        <button onclick="loadContent('videos', this)" class="tab-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
         <button onclick="loadContent('notes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">Notes</button>
         <button onclick="loadContent('DppNotes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
     </div>
     <div id="contentContainer" class="p-4"></div>
+
     <script>
         const params = new URLSearchParams(window.location.search);
         const bId = params.get("batchId");
@@ -38,18 +39,26 @@
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
 
             try {
-                // Yahan aapka updated Proxy URL format hai
                 const url = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${chapterSlug}&contentType=${tab}`;
-                
                 const res = await fetch(url);
                 const json = await res.json();
 
-                container.innerHTML = json.html || "No content found.";
-
-                window.__viewNote = function(el) {
-                    console.log("Clicked:", el.dataset);
-                    alert("View Clicked for Schedule ID: " + el.dataset.schedid);
-                };
+                let htmlContent = '';
+                if (json.data && json.data.length > 0) {
+                    json.data.forEach(item => {
+                        htmlContent += `
+                            <div class="notes-card">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-sm text-gray-800">${item.topic}</h3>
+                                    <p class="text-xs text-gray-500 mt-1">${item.videoDetails?.duration || ''}</p>
+                                </div>
+                                <button class="notes-view-btn" onclick="window.location.href='player.html?lectureId=${item._id}&batchId=${bId}'">View</button>
+                            </div>`;
+                    });
+                } else {
+                    htmlContent = '<div class="text-center mt-10 text-gray-500">No content found</div>';
+                }
+                container.innerHTML = htmlContent;
             } catch (e) {
                 container.innerHTML = `<div class="text-center mt-10 text-red-500">Error: ${e.message}</div>`;
             }
