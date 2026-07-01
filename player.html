@@ -2,7 +2,6 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PW Player</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
@@ -14,11 +13,7 @@
     </style>
 </head>
 <body>
-
-<div id="container">
-    <video id="vid" crossorigin="anonymous" playsinline controls></video>
-</div>
-
+<div id="container"><video id="vid" crossorigin="anonymous" playsinline controls></video></div>
 <script>
     (async () => {
         const params = new URLSearchParams(window.location.search);
@@ -28,28 +23,29 @@
 
         if (!lId || !bId) return;
 
-        // HEVC Black Screen Fix
-        if (window.MediaSource) {
-            const orig = window.MediaSource.isTypeSupported;
-            window.MediaSource.isTypeSupported = (t) => {
-                if (t && (t.includes('hev1') || t.includes('hvc1'))) return false;
-                return orig.call(MediaSource, t);
-            };
-        }
-
         try {
             const res = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=${bId}&lectureId=${lId}`);
             const data = await res.json();
 
             shaka.polyfill.installAll();
             const player = new shaka.Player(vid);
-            new Plyr(vid, { autoplay: true });
-
+            
+            // DRM Config Fix
             if (data.drmKeys && data.drmKeys.clearKeys) {
-                player.configure({ drm: { clearKeys: data.drmKeys.clearKeys } });
+                const keys = {};
+                for (let kid in data.drmKeys.clearKeys) {
+                    // Shaka ko KID aur Key dono hex string mein chahiye
+                    keys[kid.replace(/-/g, "")] = data.drmKeys.clearKeys[kid];
+                }
+                player.configure({
+                    drm: {
+                        clearKeys: keys
+                    }
+                });
             }
 
             await player.load(data.url);
+            new Plyr(vid, { autoplay: true });
         } catch (e) {
             console.error("Player Error:", e);
         }
