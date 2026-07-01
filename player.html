@@ -22,19 +22,27 @@
 <script>
     (async () => {
         const params = new URLSearchParams(window.location.search);
-        const videoId = params.get('videoId') || params.get('video_id');
+        
+        const videoId = params.get('videoId') || params.get('lectureId') || params.get('lecture_id') || params.get('id');
         const batchId = params.get('batchId') || params.get('batch_id');
 
-        if (!videoId || !batchId) return;
+        if (!videoId || !batchId) {
+            console.error("Batch ID ya Lecture ID missing hai");
+            return;
+        }
 
         const video = document.getElementById('video');
         const shakaPlayer = new shaka.Player(video);
 
         try {
-            const response = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=${batchId}&lectureId=${videoId}`);
+            const response = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=\( {batchId}&lectureId= \){videoId}`);
             const data = await response.json();
 
-            if (data.drmKeys && data.drmKeys.clearKeys) {
+            if (!data.success || !data.url) {
+                throw new Error("Invalid API response");
+            }
+
+            if (data.drmKeys?.clearKeys) {
                 shakaPlayer.configure({
                     drm: {
                         clearKeys: data.drmKeys.clearKeys
@@ -42,11 +50,28 @@
                 });
             }
 
+            shakaPlayer.configure({
+                streaming: {
+                    bufferBehind: 30,
+                    bufferingGoal: 60
+                }
+            });
+
             await shakaPlayer.load(data.url);
-            new Plyr(video, { autoplay: true });
+
+            new Plyr(video, {
+                autoplay: true,
+                controls: true,
+                settings: ['quality', 'speed']
+            });
+
         } catch (err) {
-            console.error(err);
+            console.error("Player Error:", err.message);
         }
+
+        shakaPlayer.addEventListener('error', (event) => {
+            console.error('Shaka Error:', event.detail);
+        });
     })();
 </script>
 
