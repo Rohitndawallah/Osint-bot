@@ -4,61 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PW Player</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.min.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        html, body { height:100%; overflow:hidden; background:#000; }
-        video { width:100%; height:100%; background:#000; }
+        body, html { margin:0; padding:0; width:100%; height:100%; background:#000; }
+        #container { width:100%; height:100%; }
+        video { width:100%; height:100%; }
     </style>
 </head>
 <body>
-    <video id="vid" playsinline controls autoplay></video>
+
+<div id="container">
+    <video id="vid" crossorigin="anonymous" playsinline controls></video>
+</div>
 
 <script>
     (async () => {
         const params = new URLSearchParams(window.location.search);
-        const lectureId = params.get('lectureId') || params.get('lecture_id') || params.get('id');
-        const batchId = params.get('batchId') || params.get('batch_id');
-
-        if (!lectureId || !batchId) {
-            console.error("Missing ID");
-            return;
-        }
-
+        const lId = params.get('lectureId') || params.get('id');
+        const bId = params.get('batchId') || params.get('batch_id');
         const vid = document.getElementById('vid');
 
+        if (!lId || !bId) return;
+
+        // HEVC Black Screen Fix
+        if (window.MediaSource) {
+            const orig = window.MediaSource.isTypeSupported;
+            window.MediaSource.isTypeSupported = (t) => {
+                if (t && (t.includes('hev1') || t.includes('hvc1'))) return false;
+                return orig.call(MediaSource, t);
+            };
+        }
+
         try {
-            // Yahan apne Vercel proxy ka URL use karein, direct modgalaxy ka nahi
-            const res = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=${batchId}&lectureId=${lectureId}`);
+            const res = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=${bId}&lectureId=${lId}`);
             const data = await res.json();
 
-            if (!data.url) throw new Error("No video URL");
+            shaka.polyfill.installAll();
+            const player = new shaka.Player(vid);
+            new Plyr(vid, { autoplay: true });
 
-            if (window.MediaSource) {
-                const orig = window.MediaSource.isTypeSupported;
-                window.MediaSource.isTypeSupported = (t) => {
-                    if (t && (t.includes('hev1') || t.includes('hvc1'))) return false;
-                    return orig.call(MediaSource, t);
-                };
+            if (data.drmKeys && data.drmKeys.clearKeys) {
+                player.configure({ drm: { clearKeys: data.drmKeys.clearKeys } });
             }
 
-            if (data.type === 'dash') {
-                shaka.polyfill.installAll();
-                const player = new shaka.Player(vid);
-                if (data.drmKeys && data.drmKeys.clearKeys) {
-                    player.configure({ drm: { clearKeys: data.drmKeys.clearKeys } });
-                }
-                await player.load(data.url);
-            } else if (Hls.isSupported()) {
-                const hls = new Hls();
-                hls.loadSource(data.url);
-                hls.attachMedia(vid);
-            } else {
-                vid.src = data.url;
-            }
-
-            vid.play().catch(e => console.log("Autoplay blocked"));
+            await player.load(data.url);
         } catch (e) {
             console.error("Player Error:", e);
         }
