@@ -22,7 +22,6 @@
 <script>
     (async () => {
         const params = new URLSearchParams(window.location.search);
-        
         const videoId = params.get('videoId') || params.get('lectureId') || params.get('lecture_id') || params.get('id');
         const batchId = params.get('batchId') || params.get('batch_id');
 
@@ -35,7 +34,7 @@
         const shakaPlayer = new shaka.Player(video);
 
         try {
-            const response = await fetch(`https://pw.modgalaxy.in/video-api?batchId=${encodeURIComponent(batchId)}&lectureId=${encodeURIComponent(lectureId)';
+            const response = await fetch(`https://pw.modgalaxy.in/video-api?batchId=\( {encodeURIComponent(batchId)}&lectureId= \){encodeURIComponent(lecture Id)}`);
             const data = await response.json();
 
             if (!data.success || !data.url) {
