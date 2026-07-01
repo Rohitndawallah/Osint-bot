@@ -22,52 +22,45 @@
         const batchId = params.get('batchId') || params.get('batch_id');
 
         if (!lectureId || !batchId) {
-            console.error("Lecture ID or Batch ID missing");
+            console.error("Missing ID");
             return;
         }
 
         const vid = document.getElementById('vid');
 
         try {
-            const res = await fetch(`https://pw.modgalaxy.in/video-api?batchId=\( {encodeURIComponent(batchId)}&lectureId= \){encodeURIComponent(lectureId)}`);
+            // Yahan apne Vercel proxy ka URL use karein, direct modgalaxy ka nahi
+            const res = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=${batchId}&lectureId=${lectureId}`);
             const data = await res.json();
 
-            if (!data.success || !data.url) {
-                throw new Error("No video URL");
-            }
+            if (!data.url) throw new Error("No video URL");
 
-            // Black screen fix (HEVC disable)
             if (window.MediaSource) {
                 const orig = window.MediaSource.isTypeSupported;
-                window.MediaSource.isTypeSupported = function(t) {
+                window.MediaSource.isTypeSupported = (t) => {
                     if (t && (t.includes('hev1') || t.includes('hvc1'))) return false;
-                    return orig.call(this, t);
+                    return orig.call(MediaSource, t);
                 };
             }
 
             if (data.type === 'dash') {
                 shaka.polyfill.installAll();
                 const player = new shaka.Player(vid);
-                
                 if (data.drmKeys && data.drmKeys.clearKeys) {
                     player.configure({ drm: { clearKeys: data.drmKeys.clearKeys } });
                 }
-
                 await player.load(data.url);
+            } else if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(data.url);
+                hls.attachMedia(vid);
             } else {
-                if (Hls.isSupported()) {
-                    const hls = new Hls();
-                    hls.loadSource(data.url);
-                    hls.attachMedia(vid);
-                } else {
-                    vid.src = data.url;
-                }
+                vid.src = data.url;
             }
 
-            vid.play().catch(e => console.log("Autoplay blocked", e));
-
+            vid.play().catch(e => console.log("Autoplay blocked"));
         } catch (e) {
-            console.error("Player Error:", e.message);
+            console.error("Player Error:", e);
         }
     })();
 </script>
