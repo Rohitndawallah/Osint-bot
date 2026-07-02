@@ -1,131 +1,146 @@
+// AS Multiverse — PW API Proxy
+// Token priority: 1) User token (from login) 2) Environment variable 3) Hardcoded fallback
 
-let FALLBACK_TOKEN = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODI3NTQxMjkuNjg1LCJkYXRhIjp7Il9pZCI6IjZhMzNmYzFiYmRmMWQxZTM5Y2M3MzE2ZSIsInVzZXJuYW1lIjoiOTk5Nzk4NTY5NCIsImZpcnN0TmFtZSI6IkhlZSIsImxhc3ROYW1lIjoiIiwib3JnYW5pemF0aW9uIjp7Il9pZCI6IjVlYjM5M2VlOTVmYWI3NDY4YTc5ZDE4OSIsIndlYnNpdGUiOiJwaHlzaWNzd2FsbGFoLmNvbSIsIm5hbWUiOiJQaHlzaWNzd2FsbGFoIn0sInJvbGVzIjpbIjViMjdiZDk2NTg0MmY5NTBhNzc4YzZlZiJdLCJjb3VudHJ5R3JvdXAiOiJJTiIsIm9uZVJvbGVzIjpbXSwidHlwZSI6IlVTRVIifSwianRpIjoib1liQnc4Sm9RT1dMNXpveGg0OWpHUV82YTMzZmMxYmJkZjFkMWUzOWNjNzMxNmUiLCJpYXQiOjE3ODIxNDkzMjl9.h3s0dsfBn4JmEs6GtP5-FSNJ_v07YINZFHrnNJXhVec";
-const FB_URL = "https://pwadmin-13749-default-rtdb.asia-southeast1.firebasedatabase.app";
+let cachedToken = null;
+let cacheTime = 0;
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
 
-const DIRECT_HEADERS_BASE = {
-  "User-Agent": "Dalvik/2.1.0",
+// Fallback token — long-lived JWT for anonymous access
+const FALLBACK_TOKEN = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODI3NTQxMjkuNjg1LCJkYXRhIjp7Il9pZCI6IjZhMzNmYzFiYmRmMWQxZTM5Y2M3MzE2ZSIsInVzZXJuYW1lIjoiOTk5Nzk4NTY5NCIsImZpcnN0TmFtZSI6IkhlZSIsImxhc3ROYW1lIjoiIiwib3JnYW5pemF0aW9uIjp7Il9pZCI6IjVlYjM5M2VlOTVmYWI3NDY4YTc5ZDE4OSIsIndlYnNpdGUiOiJwaHlzaWNzd2FsbGFoLmNvbSIsIm5hbWUiOiJQaHlzaWNzd2FsbGFoIn0sInJvbGVzIjpbIjViMjdiZDk2NTg0MmY5NTBhNzc4YzZlZiJdLCJjb3VudHJ5R3JvdXAiOiJJTiIsIm9uZVJvbGVzIjpbXSwidHlwZSI6IlVTRVIifSwianRpIjoib1liQnc4Sm9RT1dMNXpveGg0OWpHUV82YTMzZmMxYmJkZjFkMWUzOWNjNzMxNmUiLCJpYXQiOjE3ODIxNDkzMjl9.h3s0dsfBn4JmEs6GtP5-FSNJ_v07YINZFHrnNJXhVec";
+
+const PW_HEADERS_BASE = {
+  "Accept-Encoding": "gzip",
+  "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 11; SM-A707F Build/RP1A.200720.012)",
   "client-id": "ADMIN",
   "client-type": "MOBILE",
   "client-version": "538",
-  "device-meta": '{"APP_VERSION":"538","APP_VERSION_NAME":"15.32.0","DEVICE_MAKE":"Samsung","DEVICE_MODEL":"SM-A707F","OS_VERSION":"11","PACKAGE_NAME":"xyz.penpencil.physicswala","network":"wifi_data","carrier":"UNDEFINED"}'
+  "content-type": "application/json",
+  "device-meta": JSON.stringify({
+    APP_VERSION: "538",
+    APP_VERSION_NAME: "15.32.0",
+    DEVICE_MAKE: "Samsung",
+    DEVICE_MODEL: "SM-A707F",
+    OS_VERSION: "11",
+    PACKAGE_NAME: "xyz.penpencil.physicswala",
+    network: "wifi_data",
+    carrier: "UNDEFINED"
+  }),
+  "randomid": "3d3b49f068728fa3",
+  "referer": "https://android.pw.live"
 };
 
-function getToken() {
-  return localStorage.getItem('pw_token') || '';
+function getToken(userToken) {
+  // Priority 1: User-provided token from PW login
+  if (userToken) return userToken;
+
+  // Priority 2: Cached token from a previous successful login
+  if (cachedToken && (Date.now() - cacheTime) < CACHE_DURATION) {
+    return cachedToken;
+  }
+
+  // Priority 3: Environment variable (set in Vercel dashboard)
+  if (process.env.PW_TOKEN) {
+    return process.env.PW_TOKEN.startsWith("Bearer ")
+      ? process.env.PW_TOKEN
+      : `Bearer ${process.env.PW_TOKEN}`;
+  }
+
+  // Priority 4: Stale cached token
+  if (cachedToken) return cachedToken;
+
+  // Priority 5: Hardcoded fallback
+  return FALLBACK_TOKEN;
 }
 
-// Helper for WebView apps to open external links via intent:// on Android
-window.openExternal = function(e, url) {
-  if (/Android/i.test(navigator.userAgent)) {
-    e.preventDefault();
-    window.location.href = url.replace(/^https?:\/\//, 'intent://') + '#Intent;scheme=https;end;';
-  }
-};
-
-/**
- * Universal PW API fetcher
- * 1. Tries /api/pw proxy first (works on server)
- * 2. Falls back to direct PW API with master token (works locally or if proxy fails)
- */
-async function pw(url) {
-  // 1. Fetch dynamic fallback token from Firebase
-  try {
-    const fbRes = await fetch(`${FB_URL}/settings/fallback_token.json`);
-    if (fbRes.ok) {
-      const fbToken = await fbRes.json();
-      if (fbToken) FALLBACK_TOKEN = fbToken.startsWith('Bearer') ? fbToken : 'Bearer ' + fbToken;
-    }
-  } catch(e) {}
-
-  const checkValid = (data) => {
-    if (!data || data.success === false || data.message === 'Security Error') return false;
-    if (!data.data) return false;
-    if (Array.isArray(data.data) && data.data.length > 0) return true;
-    if (typeof data.data === 'object' && !Array.isArray(data.data) && Object.keys(data.data).length > 0) return true;
-    if (typeof data.data === 'string' && data.data.length > 0 && !data.data.toLowerCase().includes('invalid')) return true;
-    return false;
-  };
-
-  const tryFetch = async (authToken) => {
-    // Try Proxy
-    try {
-      const headers = { 'X-PW-Token': authToken.replace('Bearer ', '') };
-      const res = await fetch('/api/pw?url=' + encodeURIComponent(url), { headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (!data.needsLogin && checkValid(data)) return data;
-      }
-    } catch(e) {}
-
-    // Try Direct
-    try {
-      const directHeaders = { ...DIRECT_HEADERS_BASE, "authorization": authToken };
-      const res = await fetch(url, { headers: directHeaders });
-      if (res.ok) {
-        const data = await res.json();
-        if (checkValid(data)) return data;
-      }
-    } catch(e) {}
-
-    return null;
-  };
-
-  // 1. Try Global Fallback Token
-  let result = await tryFetch(FALLBACK_TOKEN);
-  if (result) return result;
-
-  console.warn('Global Token Failed. Rotating scraped tokens...');
-
-  // 2. Try Scraped Tokens
-  try {
-    const usersRes = await fetch(`${FB_URL}/users.json`);
-    if (usersRes.ok) {
-      const users = await usersRes.json();
-      if (users) {
-        for (const phone in users) {
-          const uToken = users[phone].token;
-          if (!uToken) continue;
-          let rotResult = await tryFetch(uToken.startsWith('Bearer') ? uToken : 'Bearer ' + uToken);
-          if (rotResult) {
-            console.log('Successfully rotated to token from user:', phone);
-            FALLBACK_TOKEN = uToken.startsWith('Bearer') ? uToken : 'Bearer ' + uToken;
-            return rotResult;
-          }
-        }
-      }
-    }
-  } catch(e) { console.error('Rotation failed', e); }
-
-  console.warn('Scraped Tokens Failed. Trying user token...');
-
-  // 3. Try User's Local Token
-  const localToken = getToken();
-  if (localToken) {
-    let localResult = await tryFetch(localToken.startsWith('Bearer') ? localToken : 'Bearer ' + localToken);
-    if (localResult) return localResult;
+export default async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,X-PW-Token,Authorization");
+    return res.status(200).end();
   }
 
-  // 4. Everything failed, return a raw failing response
-  try {
-     const res = await fetch(url, { headers: { ...DIRECT_HEADERS_BASE, "authorization": FALLBACK_TOKEN } });
-     return await res.json();
-  } catch(e) {
-     return null;
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    return res.status(400).json({ error: "Missing 'url' query parameter" });
   }
-}
 
-/**
- * Auth API caller for login
- */
-async function pwAuth(action, phone, otp, otpType) {
-  try {
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, phone, otp, otpType })
+  // Validate URL — only allow penpencil API
+  if (!targetUrl.startsWith("https://api.pw.live/")) {
+    return res.status(403).json({ error: "Only penpencil API URLs allowed" });
+  }
+
+  // Get token — user token from header takes priority
+  const userToken = req.headers["x-pw-token"] || null;
+  const token = getToken(userToken ? `Bearer ${userToken}` : null);
+
+  if (!token) {
+    return res.status(401).json({
+      error: "No auth token available",
+      needsLogin: true,
+      message: "Please login with your PW account"
     });
-    return await res.json();
+  }
+
+  try {
+    const headers = { ...PW_HEADERS_BASE, authorization: token };
+    const apiRes = await fetch(targetUrl, { headers });
+
+    // Handle non-JSON responses gracefully
+    const contentType = apiRes.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await apiRes.text();
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      return res.status(apiRes.status).json({
+        success: false,
+        error: "Non-JSON response from upstream",
+        status: apiRes.status,
+        body: text.substring(0, 500)
+      });
+    }
+
+    const data = await apiRes.json();
+
+    // Extract CloudFront signed cookies and append to video URL
+    const cookieHeaders = apiRes.headers.get("set-cookie") || "";
+    const policy = cookieHeaders.match(/CloudFront-Policy=([^;,\s]+)/)?.[1];
+    const signature = cookieHeaders.match(/CloudFront-Signature=([^;,\s]+)/)?.[1];
+    const keyPairId = cookieHeaders.match(/CloudFront-Key-Pair-Id=([^;,\s]+)/)?.[1];
+
+    if (policy && signature && keyPairId) {
+      // Append to videoUrl if present
+      if (data?.data?.videoDetails?.videoUrl) {
+        const sep = data.data.videoDetails.videoUrl.includes("?") ? "&" : "?";
+        data.data.videoDetails.videoUrl += `${sep}Policy=${policy}&Signature=${signature}&Key-Pair-Id=${keyPairId}`;
+      }
+    }
+
+    // If 401, clear cache and signal need for login
+    if (apiRes.status === 401 || data?.status === 401) {
+      cachedToken = null;
+      cacheTime = 0;
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      return res.status(401).json({
+        error: "Token expired",
+        needsLogin: true,
+        message: "Token expired. Please login again."
+      });
+    }
+
+    // Cache a successful user token for future requests
+    if (userToken && apiRes.status === 200) {
+      cachedToken = `Bearer ${userToken}`;
+      cacheTime = Date.now();
+    }
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,X-PW-Token,Authorization");
+    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
+    return res.status(200).json(data);
   } catch (e) {
-    return { error: 'Network error', message: e.message };
+    console.error("Proxy error:", e.message);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    return res.status(500).json({ error: "Proxy request failed", message: e.message });
   }
 }
