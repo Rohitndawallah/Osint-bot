@@ -19,7 +19,7 @@
         const bId = params.get('batchId') || params.get('batch_id');
 
         try {
-            const res = await fetch(`https://DevCoderZ-player.vercel.app/api/player.js?batchId=${bId}&lectureId=${lId}`);
+            const res = await fetch(`https://ayush-mirror.vercel.app/api/get-video-url?batchId=${bId}&childId=${lId}`);
             const data = await res.json();
 
             const match = data.url.match(/([a-f0-9-]{36})/);
