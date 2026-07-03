@@ -22,7 +22,7 @@
 
         try {
             // Yahan apni API ka link daalein
-            const res = await fetch(`https://devcoderz-player.vercel.app/api.js?batchId=${bId}&lectureId=${lId}`);
+            const res = await fetch(`https://devcoderz-player.vercel.app/api/player.js?batchId=${bId}&lectureId=${lId}`);
             const result = await res.json();
             
             const fullUrl = result.data.url; 
