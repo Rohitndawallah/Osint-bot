@@ -2,12 +2,13 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <title>Powered by The DevCoderZ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded Player</title>
     <style>
         body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
-        #player-container { width:100%; height:94%; }
+        #player-container { width:100%; height:95%; }
         iframe { width:100%; height:100%; border:none; }
-        #footer { color: #fff; font-family: sans-serif; text-align: center; height: 6%; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+        #footer { color: #fff; font-family: sans-serif; text-align: center; height: 5%; font-size: 12px; padding-top: 5px; }
     </style>
 </head>
 <body>
@@ -21,15 +22,14 @@
         const bId = params.get('batchId') || params.get('batch_id');
 
         try {
-            // Yahan apni API ka link daalein
-            const res = await fetch(`https://devcoderz-player.vercel.app/api/player.js?batchId=${bId}&lectureId=${lId}`);
+            const res = await fetch(`https://ayush-mirror.vercel.app/api/get-video-url?batchId=${bId}&childId=${lId}`);
             const result = await res.json();
             
             const fullUrl = result.data.url; 
             const match = fullUrl.match(/mediacdn\.pw\.live\/([a-f0-9-]{36})/);
             const id = match ? match[1] : null;
 
-            if (!id) throw new Error("ID not found");
+            if (!id) throw new Error("ID extraction failed");
 
             const hlsUrl = `https://devcoderz-player.vercel.app/rs45.html?Url=https://stream.pimaxer.in/${id}/master.m3u8`;
 
@@ -37,9 +37,11 @@
             iframe.src = hlsUrl;
             iframe.allow = "autoplay; fullscreen; picture-in-picture";
             iframe.allowFullscreen = true;
+            
             document.getElementById('player-container').appendChild(iframe);
         } catch (e) {
-            document.getElementById('player-container').innerHTML = `<div style="color:white; text-align:center; padding-top:20%;">Error: ${e.message}</div>`;
+            console.error("Iframe Error:", e);
+            document.getElementById('player-container').innerHTML = `<p style="color:red; text-align:center;">Error loading video: ${e.message}</p>`;
         }
     })();
 </script>
