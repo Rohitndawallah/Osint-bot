@@ -2,15 +2,17 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Embedded Player</title>
+    <title>Powered by The DevCoderZ</title>
     <style>
         body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
+        #player-container { width:100%; height:94%; }
         iframe { width:100%; height:100%; border:none; }
+        #footer { color: #fff; font-family: sans-serif; text-align: center; height: 6%; font-size: 14px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
     <div id="player-container"></div>
+    <div id="footer">Powered by The DevCoderZ</div>
 
 <script>
     (async () => {
@@ -19,28 +21,25 @@
         const bId = params.get('batchId') || params.get('batch_id');
 
         try {
-            const res = await fetch(`https://ayush-mirror.vercel.app/api/get-video-url?batchId=${bId}&childId=${lId}`);
+            // Yahan apni API ka link daalein
+            const res = await fetch(`https://devcoderz-player.vercel.app/api.js?batchId=${bId}&lectureId=${lId}`);
             const result = await res.json();
             
-            // JSON structure ke hisaab se data.data.url access karein
             const fullUrl = result.data.url; 
-            
-            // Regex jo URL ke beech ka UUID nikal sake (media directory ke baad wala)
             const match = fullUrl.match(/mediacdn\.pw\.live\/([a-f0-9-]{36})/);
             const id = match ? match[1] : null;
 
-            if (!id) throw new Error("ID extraction failed");
+            if (!id) throw new Error("ID not found");
 
             const hlsUrl = `https://devcoderz-player.vercel.app/rs45.html?Url=https://stream.pimaxer.in/${id}/master.m3u8`;
 
             const iframe = document.createElement('iframe');
-            iframe.src = hlsUrl; // encodeURIComponent ki zaroorat nahi hai yahan
+            iframe.src = hlsUrl;
             iframe.allow = "autoplay; fullscreen; picture-in-picture";
             iframe.allowFullscreen = true;
-            
             document.getElementById('player-container').appendChild(iframe);
         } catch (e) {
-            console.error("Iframe Error:", e);
+            document.getElementById('player-container').innerHTML = `<div style="color:white; text-align:center; padding-top:20%;">Error: ${e.message}</div>`;
         }
     })();
 </script>
