@@ -20,14 +20,21 @@
 
         try {
             const res = await fetch(`https://ayush-mirror.vercel.app/api/get-video-url?batchId=${bId}&childId=${lId}`);
-            const data = await res.json();
+            const result = await res.json();
+            
+            // JSON structure ke hisaab se data.data.url access karein
+            const fullUrl = result.data.url; 
+            
+            // Regex jo URL ke beech ka UUID nikal sake (media directory ke baad wala)
+            const match = fullUrl.match(/mediacdn\.pw\.live\/([a-f0-9-]{36})/);
+            const id = match ? match[1] : null;
 
-            const match = data.url.match(/([a-f0-9-]{36})/);
-            const id = match ? match[0] : null;
+            if (!id) throw new Error("ID extraction failed");
+
             const hlsUrl = `https://devcoderz-player.vercel.app/rs45.html?Url=https://stream.pimaxer.in/${id}/master.m3u8`;
 
             const iframe = document.createElement('iframe');
-            iframe.src = `${encodeURIComponent(hlsUrl)}`;
+            iframe.src = hlsUrl; // encodeURIComponent ki zaroorat nahi hai yahan
             iframe.allow = "autoplay; fullscreen; picture-in-picture";
             iframe.allowFullscreen = true;
             
