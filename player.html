@@ -13,7 +13,7 @@ video{width:100%;height:100%;object-fit:contain}
 .top-brand{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:40;text-align:center;pointer-events:none}
 .jsr{color:#ff9800;font-weight:700;font-size:14px}
 .dev{margin-top:4px;font-size:12px;font-weight:600;color:#00e5ff;text-shadow:0 0 6px #00e5ff}
-.center-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:30;cursor:pointer}
+.center-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:999;cursor:pointer}
 .center-play.hide{display:none}
 .center-play span{width:90px;height:90px;background:rgba(255,255,255,.25);backdrop-filter:blur(5px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff}
 .controls{position:absolute;bottom:0;width:100%;padding:10px;background:linear-gradient(transparent,rgba(0,0,0,.9));transition:.2s;z-index:35}
@@ -27,7 +27,7 @@ video{width:100%;height:100%;object-fit:contain}
 .settings{position:absolute;bottom:70px;right:10px;background:#111;border-radius:12px;padding:12px;width:150px;display:none;z-index:50}
 .settings label{color:#aaa;font-size:10px;display:block;margin-bottom:4px}
 .settings select{width:100%;background:#000;color:#fff;border:1px solid #555;border-radius:4px;height:24px;margin-bottom:10px}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:1000}
 .box{width:320px;padding:26px;border-radius:22px;text-align:center;background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff}
 .tg-btn{display:block;margin-top:14px;padding:14px;border-radius:28px;font-weight:700;width:100%;cursor:pointer;text-align:center;text-decoration:none;color:#fff;background:#fff;color:#1e3c72}
 </style>
@@ -79,11 +79,14 @@ document.getElementById("progress").onpointermove=document.getElementById("progr
 document.getElementById("play").onclick=()=>video.paused?video.play():video.pause();
 document.getElementById("back").onclick=()=>video.currentTime-=10;
 document.getElementById("fwd").onclick=()=>video.currentTime+=10;
-document.getElementById("settingsBtn").onclick=()=>document.getElementById("settings").style.display=document.getElementById("settings").style.display==="block"?"none":"block";
+document.getElementById("settingsBtn").onclick=e=>{e.stopPropagation();document.getElementById("settings").style.display=document.getElementById("settings").style.display==="block"?"none":"block";};
 document.getElementById("speed").onchange=e=>video.playbackRate=e.target.value;
 document.getElementById("quality").onchange=e=>shakaPlayer.selectVariantTrack(shakaPlayer.getVariantTracks().find(t=>t.id==e.target.value),true);
 document.getElementById("fs").onclick=()=>!document.fullscreenElement?playerDiv.requestFullscreen():document.exitFullscreen();
-playerDiv.onclick=e=>{if(e.target==video||e.target.id=="player"){show();document.getElementById("centerPlay").classList.add("hide");}};
+document.getElementById("centerPlay").onpointerdown=e=>{e.stopPropagation();video.play();document.getElementById("centerPlay").classList.add("hide");show();};
+playerDiv.onclick=e=>{if(e.target==video||e.target.id=="player"){show();document.getElementById("settings").style.display="none";}};
+video.onplay=()=>document.getElementById("play").textContent="❚❚";
+video.onpause=()=>document.getElementById("play").textContent="▶";
 </script>
 </body>
 </html>
