@@ -22,22 +22,19 @@
         const bId = params.get('batchId') || params.get('batch_id');
 
         try {
-            const res = await fetch(`https://devcoderz-player.vercel.app/api/player.js?batchId=${bId}&lectureId=${lId}`);
+            const res = await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${lId}`);
             const result = await res.json();
-            
-            const fullUrl = result.data.url; 
-            const match = fullUrl.match(/mediacdn\.pw\.live\/([a-f0-9-]{36})/);
-            const id = match ? match[1] : null;
 
-            if (!id) throw new Error("ID extraction failed");
+            const mpdUrl = result.data.url;
+            const m3u8Url = mpdUrl.replace('/master.mpd', '/master.m3u8');
 
-            const hlsUrl = `https://devcoderz-player.vercel.app/rs45.html?Url=https://stream.pimaxer.in/${id}/master.m3u8`;
+            const hlsUrl = `https://devcoderz-player.vercel.app/rs45.html?Url=${m3u8Url}`;
 
             const iframe = document.createElement('iframe');
             iframe.src = hlsUrl;
             iframe.allow = "autoplay; fullscreen; picture-in-picture";
             iframe.allowFullscreen = true;
-            
+
             document.getElementById('player-container').appendChild(iframe);
         } catch (e) {
             console.error("Iframe Error:", e);
