@@ -30,10 +30,17 @@ video{width:100%;height:100%;object-fit:contain}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:1000}
 .box{width:320px;padding:26px;border-radius:22px;text-align:center;background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff}
 .tg-btn{display:block;margin-top:14px;padding:14px;border-radius:28px;font-weight:700;width:100%;cursor:pointer;text-align:center;text-decoration:none;color:#fff;background:#fff;color:#1e3c72}
+.continue{background:rgba(0,0,0,.25);border:1px solid #fff;color:#fff;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="overlay" id="tgPopup"><div class="box"><h2>Ready to Watch?</h2><div class="tg-btn" id="continueBtn">Continue to Video</div></div></div>
+<div class="overlay" id="tgPopup">
+ <div class="box">
+  <h2>Join our Telegram</h2>
+  <a class="tg-btn" href="https://t.me/+JXdxtVzQf-NhM2Jl" target="_blank">Join Telegram</a>
+  <div class="tg-btn continue" id="continueBtn">Continue to Video</div>
+ </div>
+</div>
 <div class="player" id="player">
  <video id="video" playsinline></video>
  <div class="top-brand"><div class="jsr">🚩 Jai Shree Ram 🚩</div><div class="dev">Developed by - Devansh Sharma</div></div>
@@ -74,13 +81,14 @@ video.ontimeupdate=()=>{if(!isDragging){
  document.getElementById("time").textContent=new Date(video.currentTime*1000).toISOString().substr(14,5)+" / "+new Date(video.duration*1000).toISOString().substr(14,5);
 }};
 const seek = (e) => {
- let pos=(e.clientX-document.getElementById("progress").getBoundingClientRect().left)/document.getElementById("progress").offsetWidth;
- video.currentTime=pos*video.duration;
- document.getElementById("bar").style.width=document.getElementById("thumb").style.left=(pos*100)+"%";
+ let rect = document.getElementById("progress").getBoundingClientRect();
+ let pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+ video.currentTime = pos * video.duration;
+ document.getElementById("bar").style.width = document.getElementById("thumb").style.left = (pos * 100) + "%";
 };
-document.getElementById("progress").onpointerdown=e=>{isDragging=true;seek(e);};
-document.getElementById("progress").onpointermove=e=>{if(isDragging)seek(e);};
-document.getElementById("progress").onpointerup=()=>isDragging=false;
+document.getElementById("progress").addEventListener("pointerdown", e => {isDragging=true; seek(e);});
+window.addEventListener("pointermove", e => {if(isDragging) seek(e);});
+window.addEventListener("pointerup", () => {isDragging=false;});
 document.getElementById("play").onclick=()=>video.paused?video.play():video.pause();
 document.getElementById("back").onclick=()=>video.currentTime-=10;
 document.getElementById("fwd").onclick=()=>video.currentTime+=10;
