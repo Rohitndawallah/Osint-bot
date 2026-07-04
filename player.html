@@ -16,14 +16,14 @@ video{width:100%;height:100%;object-fit:contain}
 .center-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:999;cursor:pointer}
 .center-play.hide{display:none}
 .center-play span{width:90px;height:90px;background:rgba(255,255,255,.25);backdrop-filter:blur(5px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff}
-.controls{position:absolute;bottom:0;width:100%;padding:10px;background:linear-gradient(transparent,rgba(0,0,0,.9));transition:.2s;z-index:35}
-.controls.hide{transform:translateY(100%);opacity:0}
-.progress{height:7px;background:#555;border-radius:10px;position:relative;margin-bottom:10px;cursor:pointer}
+.controls{position:absolute;bottom:0;width:100%;padding:10px;background:linear-gradient(transparent,rgba(0,0,0,.9));transition:.1s;z-index:35}
+.controls.hide{opacity:0;pointer-events:none}
+.progress{height:7px;background:#555;border-radius:10px;position:relative;margin-bottom:10px;cursor:pointer;touch-action:none}
 .progress-fill{height:100%;width:0;background:#2196f3;border-radius:10px}
 .thumb{position:absolute;top:50%;width:18px;height:18px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);left:0;pointer-events:none}
 .time{color:#fff;font-size:11px;margin-bottom:4px;text-align:right}
 .row{display:flex;align-items:center;gap:6px;justify-content:space-between;color:#fff}
-.btn{width:40px;height:40px;border:1.5px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.btn{width:40px;height:40px;border:1.5px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
 .settings{position:absolute;bottom:70px;right:10px;background:#111;border-radius:12px;padding:12px;width:150px;display:none;z-index:50}
 .settings label{color:#aaa;font-size:10px;display:block;margin-bottom:4px}
 .settings select{width:100%;background:#000;color:#fff;border:1px solid #555;border-radius:4px;height:24px;margin-bottom:10px}
@@ -42,7 +42,7 @@ video{width:100%;height:100%;object-fit:contain}
   <div class="progress" id="progress"><div class="progress-fill" id="bar"></div><div class="thumb" id="thumb"></div></div>
   <div class="time" id="time">00:00 / 00:00</div>
   <div class="row">
-   <div class="btn" id="back">⟲</div><div class="btn" id="play">▶</div><div class="btn" id="fwd">⟳</div>
+   <div class="btn" id="back">⟲10</div><div class="btn" id="play">▶</div><div class="btn" id="fwd">10⟳</div>
    <div class="btn" id="settingsBtn">⚙️</div><div class="btn" id="fs">⛶</div>
   </div>
  </div>
@@ -53,7 +53,7 @@ video{width:100%;height:100%;object-fit:contain}
  </div>
 </div>
 <script>
-let video=document.getElementById("video"),playerDiv=document.getElementById("player"),shakaPlayer,hideTimer;
+let video=document.getElementById("video"),playerDiv=document.getElementById("player"),shakaPlayer,hideTimer,isDragging=false;
 async function init(){
  const p=new URLSearchParams(location.search);
  const res=await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${p.get('batchId')||p.get('id')}&childId=${p.get('lectureId')||p.get('id')}`);
@@ -68,14 +68,19 @@ async function init(){
 }
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
-video.ontimeupdate=()=>{
+video.ontimeupdate=()=>{if(!isDragging){
  let p=(video.currentTime/video.duration)*100;
  document.getElementById("bar").style.width=document.getElementById("thumb").style.left=p+"%";
- document.getElementById("time").textContent=new Date(video.currentTime*1000).toISOString().substr(11,8)+" / "+new Date(video.duration*1000).toISOString().substr(11,8);
+ document.getElementById("time").textContent=new Date(video.currentTime*1000).toISOString().substr(14,5)+" / "+new Date(video.duration*1000).toISOString().substr(14,5);
+}};
+const seek = (e) => {
+ let pos=(e.clientX-document.getElementById("progress").getBoundingClientRect().left)/document.getElementById("progress").offsetWidth;
+ video.currentTime=pos*video.duration;
+ document.getElementById("bar").style.width=document.getElementById("thumb").style.left=(pos*100)+"%";
 };
-document.getElementById("progress").onpointermove=document.getElementById("progress").onpointerdown=e=>{
- if(e.buttons==1){let pos=(e.clientX-e.target.getBoundingClientRect().left)/e.target.offsetWidth;video.currentTime=pos*video.duration;}
-};
+document.getElementById("progress").onpointerdown=e=>{isDragging=true;seek(e);};
+document.getElementById("progress").onpointermove=e=>{if(isDragging)seek(e);};
+document.getElementById("progress").onpointerup=()=>isDragging=false;
 document.getElementById("play").onclick=()=>video.paused?video.play():video.pause();
 document.getElementById("back").onclick=()=>video.currentTime-=10;
 document.getElementById("fwd").onclick=()=>video.currentTime+=10;
