@@ -59,7 +59,6 @@ video{width:100%;height:100%;object-fit:contain}
   <label>Quality</label><select id="quality"><option value="-1">Auto</option></select>
  </div>
 </div>
-
 <script>
 let video=document.getElementById("video"),playerDiv=document.getElementById("player"),shakaPlayer,hideTimer,isDragging=false;
 
@@ -68,79 +67,65 @@ function formatTime(s){
  return [h,m,sec].map(v=>(v<10?"0"+v:v)).join(":");
 }
 
-// ================== IMPROVED KEY PARSER ==================
+// ================= FIXED KEY PARSER =================
 function parseKeys(keys) {
     const clearKeys = {};
     if (!keys) return clearKeys;
-
     try {
-        // Handle different formats PW sends
-        if (typeof keys === 'string') {
-            keys = keys.split('\n');
-        }
+        if (typeof keys === 'string') keys = keys.split(/[\n,]+/);
         if (Array.isArray(keys)) {
             keys.forEach(item => {
-                if (typeof item === 'string') {
-                    const parts = item.split(':');
-                    if (parts.length >= 2) {
-                        let kid = parts[0].trim().replace(/-/g, '').toLowerCase();
-                        let key = parts[1].trim().replace(/-/g, '').toLowerCase();
-                        if (kid && key) clearKeys[kid] = key;
+                if (typeof item === 'string' && item.includes(':')) {
+                    const [kid, key] = item.split(':');
+                    if (kid && key) {
+                        const k = kid.trim().replace(/-/g,'').toLowerCase();
+                        const v = key.trim().replace(/-/g,'').toLowerCase();
+                        clearKeys[k] = v;
                     }
                 }
             });
         } else if (typeof keys === 'object') {
             Object.entries(keys).forEach(([kid, key]) => {
                 if (kid && key) {
-                    kid = kid.replace(/-/g, '').toLowerCase();
-                    key = String(key).replace(/-/g, '').toLowerCase();
-                    clearKeys[kid] = key;
+                    const k = String(kid).trim().replace(/-/g,'').toLowerCase();
+                    const v = String(key).trim().replace(/-/g,'').toLowerCase();
+                    clearKeys[k] = v;
                 }
             });
         }
-    } catch(e) {
-        console.error("Key parsing error:", e);
-    }
+    } catch(e) {}
     return clearKeys;
 }
 
 async function init(){
-    const p=new URLSearchParams(location.search);
-    const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('scheduleId');
-    
-    const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=\( {bId}&subjectId= \){sId}&scheduleId=${lId}`);
-    const data=await res.json();
-    const d=data.video_data;
+ const p=new URLSearchParams(location.search);
+ const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('scheduleId');
+ const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=\( {bId}&subjectId= \){sId}&scheduleId=${lId}`);
+ const data=await res.json();
+ const d=data.video_data;
 
-    shakaPlayer=new shaka.Player(video);
-    
-    // Fixed Key Handling
-    const clearKeys = parseKeys(d.keys || data.keys);
-    if (Object.keys(clearKeys).length > 0) {
-        shakaPlayer.configure({drm:{clearKeys: clearKeys}});
-    }
+ shakaPlayer=new shaka.Player(video);
+ 
+ // Fixed Key Handling
+ const clearKeys = parseKeys(d.keys || data.keys);
+ if (Object.keys(clearKeys).length > 0) {
+    shakaPlayer.configure({drm:{clearKeys: clearKeys}});
+ }
 
-    await shakaPlayer.load(d.url);
+ await shakaPlayer.load(d.url);
 
-    // Quality options
-    shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
-        let o=document.createElement("option");
-        o.value=t.id;
-        o.text=t.height+"p";
-        document.getElementById("quality").appendChild(o);
-    });
+ shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
+  let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
+ });
 }
 
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
-
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
-
 video.ontimeupdate=()=>{if(!isDragging){
  let p=(video.currentTime/video.duration)*100;
  document.getElementById("bar").style.width=document.getElementById("thumb").style.left=p+"%";
  document.getElementById("time").textContent=formatTime(video.currentTime)+" / "+formatTime(video.duration);
 }};
-
 const seek = (e) => {
  let rect = document.getElementById("progress").getBoundingClientRect();
  let clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
@@ -148,11 +133,9 @@ const seek = (e) => {
  video.currentTime = pos * video.duration;
  document.getElementById("bar").style.width = document.getElementById("thumb").style.left = (pos * 100) + "%";
 };
-
 document.getElementById("progress").addEventListener("pointerdown", e => {isDragging=true; seek(e);});
 window.addEventListener("pointermove", e => {if(isDragging) seek(e);});
 window.addEventListener("pointerup", () => {isDragging=false;});
-
 document.getElementById("play").onclick=()=>video.paused?video.play():video.pause();
 document.getElementById("back").onclick=()=>video.currentTime-=10;
 document.getElementById("fwd").onclick=()=>video.currentTime+=10;
