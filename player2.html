@@ -69,10 +69,11 @@ async function init(){
  const p=new URLSearchParams(location.search);
  const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('lectureId');
  const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=${bId}&subjectId=${sId}&scheduleId=${lId}`);
- const d=(await res.json()).video_data;
+ const data=await res.json();
+ const d=data.video_data;
  shakaPlayer=new shaka.Player(video);
  const [kid,key]=d.keys[0].split(':');
- shakaPlayer.configure({drm:{clearKeys:{[kid.replace(/-/g,'')]:key}}});
+ shakaPlayer.configure({drm:{clearKeys:{[kid]:key}}});
  await shakaPlayer.load(d.url);
  shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
   let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
@@ -87,7 +88,7 @@ video.ontimeupdate=()=>{if(!isDragging){
 }};
 const seek = (e) => {
  let rect = document.getElementById("progress").getBoundingClientRect();
- let pos = Math.max(0, Math.min(1, ((e.clientX||e.touches[0].clientX) - rect.left) / rect.width));
+ let pos = Math.max(0, Math.min(1, ((e.clientX||(e.touches?e.touches[0].clientX:0)) - rect.left) / rect.width));
  video.currentTime = pos * video.duration;
  document.getElementById("bar").style.width = document.getElementById("thumb").style.left = (pos * 100) + "%";
 };
