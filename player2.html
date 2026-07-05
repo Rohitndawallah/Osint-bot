@@ -67,7 +67,7 @@ function formatTime(s){
 }
 async function init(){
  const p=new URLSearchParams(location.search);
- const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('lectureId') || p.get('scheduleId');
+ const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('lectureId');
  try {
   const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=${bId}&subjectId=${sId}&scheduleId=${lId}`);
   const data=await res.json();
@@ -81,7 +81,10 @@ async function init(){
    let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
   });
  } catch(err) {
-  window.location.href=`https://brainboxinstitute.in/play?batchId=${bId}&scheduleId=${lId}&subjectId=${sId}`;
+  const iframe=document.createElement('iframe');
+  iframe.src=`https://brainboxinstitute.in/play?batchId=${bId}&scheduleId=${lId}&subjectId=${sId}`;
+  iframe.style.cssText="position:fixed;inset:0;width:100%;height:100%;border:none;z-index:2000";
+  document.body.appendChild(iframe);
  }
 }
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
