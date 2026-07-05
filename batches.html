@@ -56,7 +56,7 @@
     <script>
         const batchId = new URLSearchParams(window.location.search).get("batch_id") || "698ad3519549b300a5e1cc6a";
 
-        fetch(`https://brainboxinstitute.in/api/todays-schedule?batchId=${encodeURIComponent(batchId)}`)
+        fetch(`https://DevCoderZ-Player.vercel.app/api/live.js?batchId=${encodeURIComponent(batchId)}`)
             .then(res => res.json())
             .then(data => renderClasses(data.data || []))
             .catch(err => console.error(err));
