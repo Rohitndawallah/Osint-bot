@@ -88,7 +88,8 @@ video.ontimeupdate=()=>{if(!isDragging){
 }};
 const seek = (e) => {
  let rect = document.getElementById("progress").getBoundingClientRect();
- let pos = Math.max(0, Math.min(1, ((e.clientX||(e.touches?e.touches[0].clientX:0)) - rect.left) / rect.width));
+ let clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+ let pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
  video.currentTime = pos * video.duration;
  document.getElementById("bar").style.width = document.getElementById("thumb").style.left = (pos * 100) + "%";
 };
