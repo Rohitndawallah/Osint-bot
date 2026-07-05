@@ -46,14 +46,14 @@
     </div>
 
     <script>
-        // URL se batch_id nikalo
+        
         const urlParams = new URLSearchParams(window.location.search);
-        const batchId = urlParams.get("batchId");
+        const batchId = urlParams.get("batch_id");
 
         if (!batchId) {
             document.getElementById("batchTitle").innerText = "Error: No Batch Selected";
         } else {
-            // Live Classes Fetch
+          
             fetch(`https://DevCoderZ-Player.vercel.app/api/live.js?batchId=${encodeURIComponent(batchId)}`)
                 .then(res => res.json())
                 .then(data => {
