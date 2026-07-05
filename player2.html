@@ -67,22 +67,22 @@ function formatTime(s){
 }
 async function init(){
  const p=new URLSearchParams(location.search);
- const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('lectureId');
+ const bId=p.get('batchId'), lId=p.get('lectureId');
  try {
-  const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=${bId}&subjectId=${sId}&scheduleId=${lId}`);
-  const data=await res.json();
-  if(!data.success) throw new Error();
-  const d=data.video_data;
+  const res=await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${lId}`);
+  const json=await res.json();
+  if(!json.data) throw new Error();
+  const d=json.data;
   shakaPlayer=new shaka.Player(video);
-  const [kid,key]=d.keys[0].split(':');
-  shakaPlayer.configure({drm:{clearKeys:{[kid]:key}}});
+  const [kid,key]=d.drmDetails.data.split(':');
+  shakaPlayer.configure({drm:{clearKeys:{[kid.replace(/-/g,'')]:key}}});
   await shakaPlayer.load(d.url);
   shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
    let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
   });
  } catch(err) {
   const iframe=document.createElement('iframe');
-  iframe.src=`https://brainboxinstitute.in/play?batchId=${bId}&scheduleId=${lId}&subjectId=${sId}`;
+  iframe.src=`https://brainboxinstitute.in/play?batchId=${bId}&subjectId=${p.get('subjectId')}&scheduleId=${lId}`;
   iframe.style.cssText="position:fixed;inset:0;width:100%;height:100%;border:none;z-index:2000";
   document.body.appendChild(iframe);
  }
