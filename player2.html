@@ -100,7 +100,7 @@ function parseKeys(keys) {
 async function init(){
  const p=new URLSearchParams(location.search);
  const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('scheduleId');
- const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=\( {bId}&subjectId= \){sId}&scheduleId=${lId}`);
+ const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=\( {batchId}&subjectId= \){subjectId}&scheduleId=${lectureId}`);
  const data=await res.json();
  const d=data.video_data;
 
