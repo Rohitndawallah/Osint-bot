@@ -61,64 +61,29 @@ video{width:100%;height:100%;object-fit:contain}
 </div>
 <script>
 let video=document.getElementById("video"),playerDiv=document.getElementById("player"),shakaPlayer,hideTimer,isDragging=false;
-
 function formatTime(s){
  let h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);
  return [h,m,sec].map(v=>(v<10?"0"+v:v)).join(":");
 }
-
-// ================= FIXED KEY PARSER =================
-function parseKeys(keys) {
-    const clearKeys = {};
-    if (!keys) return clearKeys;
-    try {
-        if (typeof keys === 'string') keys = keys.split(/[\n,]+/);
-        if (Array.isArray(keys)) {
-            keys.forEach(item => {
-                if (typeof item === 'string' && item.includes(':')) {
-                    const [kid, key] = item.split(':');
-                    if (kid && key) {
-                        const k = kid.trim().replace(/-/g,'').toLowerCase();
-                        const v = key.trim().replace(/-/g,'').toLowerCase();
-                        clearKeys[k] = v;
-                    }
-                }
-            });
-        } else if (typeof keys === 'object') {
-            Object.entries(keys).forEach(([kid, key]) => {
-                if (kid && key) {
-                    const k = String(kid).trim().replace(/-/g,'').toLowerCase();
-                    const v = String(key).trim().replace(/-/g,'').toLowerCase();
-                    clearKeys[k] = v;
-                }
-            });
-        }
-    } catch(e) {}
-    return clearKeys;
-}
-
 async function init(){
  const p=new URLSearchParams(location.search);
- const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('scheduleId');
- const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=\( {batchId}&subjectId= \){subjectId}&scheduleId=${lectureId}`);
- const data=await res.json();
- const d=data.video_data;
-
- shakaPlayer=new shaka.Player(video);
- 
- // Fixed Key Handling
- const clearKeys = parseKeys(d.keys || data.keys);
- if (Object.keys(clearKeys).length > 0) {
-    shakaPlayer.configure({drm:{clearKeys: clearKeys}});
+ const bId=p.get('batchId'), sId=p.get('subjectId'), lId=p.get('lectureId') || p.get('scheduleId');
+ try {
+  const res=await fetch(`https://brainboxinstitute.in/api/video-url?batchId=${bId}&subjectId=${sId}&scheduleId=${lId}`);
+  const data=await res.json();
+  if(!data.success) throw new Error();
+  const d=data.video_data;
+  shakaPlayer=new shaka.Player(video);
+  const [kid,key]=d.keys[0].split(':');
+  shakaPlayer.configure({drm:{clearKeys:{[kid]:key}}});
+  await shakaPlayer.load(d.url);
+  shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
+   let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
+  });
+ } catch(err) {
+  window.location.href=`https://brainboxinstitute.in/play?batchId=${bId}&scheduleId=${lId}&subjectId=${sId}`;
  }
-
- await shakaPlayer.load(d.url);
-
- shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
-  let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
- });
 }
-
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
 video.ontimeupdate=()=>{if(!isDragging){
