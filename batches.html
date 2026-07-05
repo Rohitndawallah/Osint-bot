@@ -76,7 +76,8 @@
                 container.innerHTML = '<p class="text-slate-500 text-sm italic">No classes today.</p>';
             } else {
                 container.innerHTML = classes.map(item => `
-                    <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1">
+                    <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1 cursor-pointer" 
+                         onclick="location.href='player.html?lectureId=${item._id}&batchId=${batchId}'">
                         <div class="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded w-fit">Live</div>
                         <div class="text-xs font-bold text-slate-800 line-clamp-2">${item.data?.topic || "Untitled Class"}</div>
                         <div class="text-[10px] text-slate-500 mt-1">${item.data?.subjectId?.name || "General"}</div>
