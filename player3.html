@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Video Player</title>
+<style>
+    :root{--primary:#00b4ff;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body,html{height:100%;background:#0a0a0f;color:#fff;overflow:hidden;font-family:system-ui,sans-serif;}
+    #shell{display:flex;flex-direction:column;height:100vh;}
+    #video-col{flex:1;position:relative;background:#000;}
+    video{width:100%;height:100%;object-fit:contain;}
+    .topbar{position:absolute;top:0;left:0;right:0;padding:10px 15px;background:linear-gradient(rgba(0,0,0,0.85),transparent);z-index:20;display:flex;justify-content:space-between;align-items:center;}
+    .controls{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.9));padding:10px 15px;z-index:15;opacity:1;transition:opacity .3s;}
+    .hidden{opacity:0;pointer-events:none;}
+    button{background:none;border:none;color:white;cursor:pointer;padding:6px;}
+    .seek-bar{width:100%;height:6px;background:#333;border-radius:3px;position:relative;cursor:pointer;}
+    .bar-fill{height:100%;background:var(--primary);width:0%;transition:width .1s;}
+    .bar-thumb{position:absolute;top:-6px;left:0;width:14px;height:14px;background:white;border-radius:50%;transform:translateX(-50%);box-shadow:0 0 8px rgba(0,180,255,0.8);}
+</style>
+</head>
+<body>
+
+<div id="shell">
+  <div id="video-col">
+    <div class="topbar">
+      <div id="player-title">Loading...</div>
+      <button id="tlBtn" class="panel-btn">📋 Timeline</button>
+    </div>
+
+    <div id="vid-box">
+      <video id="vid" playsinline></video>
+    </div>
+
+    <!-- Controls -->
+    <div id="ctrl-overlay" class="controls">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="playBtn"><span id="iPlay">▶</span><span id="iPause" style="display:none;">⏸</span></button>
+        
+        <button id="rwBtn">⏪10</button>
+        <button id="fwBtn">10⏩</button>
+
+        <div style="flex:1;">
+          <div class="seek-bar" id="seekBar">
+            <div class="bar-fill" id="barFill"></div>
+            <div class="bar-thumb" id="barThumb"></div>
+          </div>
+        </div>
+
+        <span id="curTime">0:00</span>
+        <span id="durTime">0:00</span>
+
+        <button id="muteBtn">🔊</button>
+        <input type="range" id="volBar" min="0" max="100" value="100" style="width:80px;">
+
+        <button id="settBtn">⚙️</button>
+        <button id="fsBtn">⛶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================== API ==================
+const qp = new URLSearchParams(location.search);
+const batchId = qp.get('batchId');
+const subjectId = qp.get('subjectId');
+const scheduleId = qp.get('scheduleId');
+
+async function boot() {
+  if (!batchId || !subjectId || !scheduleId) {
+    alert("batchId, subjectId aur scheduleId URL mein add karo");
+    return;
+  }
+
+  const url = `https://brainboxinstitute.in/api/video-url?batchId=\( {encodeURIComponent(batchId)}&subjectId= \){encodeURIComponent(subjectId)}&scheduleId=\( {encodeURIComponent(lectureId)}&t= \){Date.now()}`;
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+
+    document.getElementById('player-title').textContent = json.topic_name || "Video";
+
+    const vdata = {
+      url: json.video_data?.url || '',
+      keys: json.video_data?.keys || [],
+      licenseUrl: json.video_data?.licenseUrl,
+      licenseToken: json.video_data?.licenseToken,
+      certificateUrl: json.video_data?.certificateUrl
+    };
+
+    initVideo(vdata);
+  } catch(e) {
+    alert("Error: " + e.message);
+  }
+}
+
+// ================== VIDEO PLAYER (Full Controls) ==================
+let vid = document.getElementById('vid');
+let isSeeking = false;
+
+function initVideo(data) {
+  vid.src = data.url;
+  vid.volume = 1;
+
+  const playBtn = document.getElementById('playBtn');
+  const seekBar = document.getElementById('seekBar');
+  const barFill = document.getElementById('barFill');
+  const barThumb = document.getElementById('barThumb');
+  const curTimeEl = document.getElementById('curTime');
+  const durTimeEl = document.getElementById('durTime');
+
+  playBtn.addEventListener('click', () => vid.paused ? vid.play() : vid.pause());
+
+  vid.addEventListener('timeupdate', () => {
+    if (isSeeking) return;
+    const percent = (vid.currentTime / vid.duration) * 100 || 0;
+    barFill.style.width = percent + '%';
+    barThumb.style.left = percent + '%';
+    curTimeEl.textContent = fmtTime(vid.currentTime);
+  });
+
+  vid.addEventListener('loadedmetadata', () => {
+    durTimeEl.textContent = fmtTime(vid.duration);
+  });
+
+  // Seek
+  seekBar.addEventListener('mousedown', () => isSeeking = true);
+  seekBar.addEventListener('mouseup', () => isSeeking = false);
+  seekBar.addEventListener('click', e => {
+    const rect = seekBar.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    vid.currentTime = pos * vid.duration;
+  });
+
+  vid.play().catch(() => {});
+}
+
+function fmtTime(seconds) {
+  if (!seconds || !isFinite(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `\( {m}: \){s < 10 ? '0' : ''}${s}`;
+}
+
+// Boot Player
+window.onload = boot;
+</script>
+</body>
+</html>
