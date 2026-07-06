@@ -3,49 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; }
-        .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-family: sans-serif; }
-    </style>
+    <title>Lectures</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-    <div id="loader" class="loader">Loading Video Stream...</div>
-    <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+<body class="bg-gray-50 pb-16">
+    <nav class="h-16 bg-white border-b flex items-center px-4 sticky top-0 z-20">
+        <button onclick="history.back()" class="text-gray-600 font-bold text-sm">← Back</button>
+        <h1 class="ml-4 font-bold text-gray-800">Content</h1>
+    </nav>
+    <div id="tabsContainer" class="flex gap-2 p-4 overflow-x-auto bg-white">
+        <button onclick="loadContent('videos', this)" class="tab-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
+        <button onclick="loadContent('notes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">Notes</button>
+        <button onclick="loadContent('DppNotes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
+    </div>
+    <div id="contentContainer" class="p-4"></div>
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const batchId = params.get("batchId");
-        const lectureId = params.get("lectureId");
-        const subjectId = params.get("subjectId");
+        const bId = params.get("batchId");
+        const sId = params.get("subjectId");
+        const chapterSlug = params.get("chapterSlug");
 
-        const apiUrl = `https://devcoderz-player.vercel.app/api/stream.js?batchId=${batchId}&lectureId=${lectureId}&subjectId=${subjectId}`;
-
-        fetch(apiUrl)
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.url) {
-                    const match = data.url.match(/mediacdn\.pw\.live\/([a-f0-9-]+)\//);
-                    if (match && match[1]) {
-                        const videoId = match[1];
-                        const pimaxerUrl = `https://stream.pimaxer.in/${videoId}/master.m3u8`;
-                        const playerSrc = `https://devcoderz-player.vercel.app/rs45.html?Url=${encodeURIComponent(pimaxerUrl)}`;
-                        
-                        document.getElementById("videoPlayer").src = playerSrc;
-                        document.getElementById("loader").style.display = "none";
-                    } else {
-                        document.body.innerHTML = "<div class='loader'>Error: Could not extract Video ID</div>";
-                    }
-                } else {
-                    document.body.innerHTML = "<div class='loader'>Error: Video link not found</div>";
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                document.body.innerHTML = "<div class='loader'>Error loading stream</div>";
+        async function loadContent(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white');
+                b.classList.add('bg-white', 'border');
             });
+            if(btn) {
+                btn.classList.add('bg-indigo-600', 'text-white');
+                btn.classList.remove('bg-white', 'border');
+            }
+
+            const container = document.getElementById('contentContainer');
+            container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
+
+            try {
+                const url = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${chapterSlug}&contentType=${tab}`;
+                const res = await fetch(url);
+                const json = await res.json();
+                let htmlContent = '';
+                if (json.data && json.data.length > 0) {
+                    json.data.forEach(item => {
+                        htmlContent += `
+                        <div class="notes-card bg-white p-4 mb-3 rounded-xl border flex items-center">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-sm text-gray-800">${item.topic}</h3>
+                                <p class="text-xs text-gray-500 mt-1">${item.videoDetails?.duration || ''}</p>
+                            </div>
+                            <button class="notes-view-btn bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.location.href='player2.html?lectureId=${item._id}&subjectId=${sId}&batchId=${bId}'">View</button>
+                        </div>`;
+                    });
+                } else {
+                    htmlContent = '<div class="text-center mt-10 text-gray-500">No content found</div>';
+                }
+                container.innerHTML = htmlContent;
+            } catch (e) {
+                container.innerHTML = `<div class="text-center mt-10 text-red-500">Error: ${e.message}</div>`;
+            }
+        }
+        loadContent('videos', document.querySelector('.tab-btn'));
     </script>
 </body>
 </html>
