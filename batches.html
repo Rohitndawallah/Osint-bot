@@ -54,7 +54,7 @@
             document.getElementById("batchTitle").innerText = "Error: No Batch Selected";
         } else {
           
-            const batchId = "698ad3519549b300a5e1cc6a";
+            
 const url = `https://thestudyspark.site/api-server/v2/batches/${batchId}/todays-schedule`;
                 .then(res => res.json())
                 .then(data => {
