@@ -22,7 +22,7 @@
         const params = new URLSearchParams(window.location.search);
         const bId = params.get("batchId");
         const sId = params.get("subjectId");
-        const chapterSlug = params.get("chapterSlug");
+        const tId = params.get("topicId");
 
         async function loadContent(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => {
@@ -38,7 +38,8 @@
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
 
             try {
-                const url = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${chapterSlug}&contentType=${tab}`;
+                // Yahan 'tag' ki jagah tId ka use kiya gaya hai
+                const url = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=${tab}`;
                 const res = await fetch(url);
                 const json = await res.json();
                 let htmlContent = '';
@@ -50,7 +51,8 @@
                                 <h3 class="font-bold text-sm text-gray-800">${item.topic}</h3>
                                 <p class="text-xs text-gray-500 mt-1">${item.videoDetails?.duration || ''}</p>
                             </div>
-                            <button class="notes-view-btn bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.location.href='player2.html?lectureId=${item._id}&subjectId=${sId}&batchId=${bId}'">View</button>
+                            <button class="notes-view-btn bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
+                                    onclick="window.location.href='player2.html?lectureId=${item._id}&subjectId=${sId}&batchId=${bId}&topicId=${tId}'">View</button>
                         </div>`;
                     });
                 } else {
