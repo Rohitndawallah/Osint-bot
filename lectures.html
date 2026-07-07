@@ -38,7 +38,6 @@
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
 
             try {
-                // Aapki nayi API URL
                 const finalUrl = `https://brainboxinstitute.in/api/contents?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
 
                 const res = await fetch(finalUrl);
@@ -50,19 +49,20 @@
                         const homework = item.homeworkIds && item.homeworkIds[0];
                         const topicName = homework ? homework.topic : (item.topic || item.name || 'Untitled');
                         const attachment = homework?.attachmentIds?.[0];
-                        
-                        // Sahi link generation logic: baseUrl + key
                         const fileUrl = attachment ? `${attachment.baseUrl}${attachment.key}` : '#';
+                        
+                        const isVideo = tab === 'videos';
+                        const actionUrl = isVideo ? `player.html?videoUrl=${item.videoDetails?.url || ''}&id=${item._id}` : fileUrl;
 
                         return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                             <div class="flex-1">
                                 <h3 class="font-bold text-sm text-gray-800">${topicName}</h3>
-                                <p class="text-xs text-gray-500 mt-1">${homework?.note || ''}</p>
+                                <p class="text-xs text-gray-500 mt-1">${homework?.note || item.videoDetails?.duration || ''}</p>
                             </div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="window.open('${fileUrl}', '_blank')">
-                                Download
+                                    onclick="${isVideo ? `window.location.href='${actionUrl}'` : `window.open('${actionUrl}', '_blank')`}">
+                                ${isVideo ? 'Watch' : 'Download'}
                             </button>
                         </div>`;
                     }).join('');
@@ -73,7 +73,7 @@
                 container.innerHTML = `<div class="text-center mt-10 text-red-500">Error loading content</div>`;
             }
         }
-        loadContent('notes', document.querySelector('.tab-btn:nth-child(2)'));
+        loadContent('videos', document.querySelector('.tab-btn'));
     </script>
 </body>
 </html>
