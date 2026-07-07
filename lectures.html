@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lectures</title>
+    <title>Lectures & Content</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 pb-16">
@@ -14,7 +14,7 @@
     <div id="tabsContainer" class="flex gap-2 p-4 overflow-x-auto bg-white">
         <button onclick="loadContent('videos', this)" class="tab-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
         <button onclick="loadContent('notes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">Notes</button>
-        <button onclick="loadContent('DppNotes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
+        <button onclick="loadContent('dppNotes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
     </div>
     <div id="contentContainer" class="p-4"></div>
 
@@ -37,30 +37,41 @@
             const container = document.getElementById('contentContainer');
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
 
+            const contentType = tab === 'dppNotes' ? 'dpp' : (tab === 'notes' ? 'notes' : 'videos');
+
             try {
-                // Yahan 'tag' ki jagah tId ka use kiya gaya hai
-                const url = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=${tab}`;
-                const res = await fetch(url);
+                // Primary API: Studyspark
+                const primaryUrl = `https://api.studyspark.study/api/batch/${bId}/subject/${sId}/contents?page=1&contentType=${contentType}&topicId=${tId}`;
+                const res = await fetch(primaryUrl);
                 const json = await res.json();
-                let htmlContent = '';
-                if (json.data && json.data.length > 0) {
-                    json.data.forEach(item => {
-                        htmlContent += `
-                        <div class="notes-card bg-white p-4 mb-3 rounded-xl border flex items-center">
+                
+                let items = json.data || [];
+                
+                // Fallback Logic: Agar data na mile to purani API use karo
+                if (items.length === 0) {
+                    const fallbackUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=${tab}`;
+                    const fRes = await fetch(fallbackUrl);
+                    const fJson = await fRes.json();
+                    items = fJson.data || [];
+                }
+
+                if (items.length > 0) {
+                    container.innerHTML = items.map(item => `
+                        <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                             <div class="flex-1">
-                                <h3 class="font-bold text-sm text-gray-800">${item.topic}</h3>
+                                <h3 class="font-bold text-sm text-gray-800">${item.topic || item.name || 'Untitled'}</h3>
                                 <p class="text-xs text-gray-500 mt-1">${item.videoDetails?.duration || ''}</p>
                             </div>
-                            <button class="notes-view-btn bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="window.location.href='player.html?lectureId=${item._id}&subjectId=${sId}&batchId=${bId}&topicId=${tId}'">View</button>
-                        </div>`;
-                    });
+                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
+                                    onclick="window.location.href='${item.url ? item.url : 'player.html?lectureId='+ (item._id||'') +'&subjectId='+sId+'&batchId='+bId+'&topicId='+tId}'">
+                                ${item.url ? 'Download' : 'View'}
+                            </button>
+                        </div>`).join('');
                 } else {
-                    htmlContent = '<div class="text-center mt-10 text-gray-500">No content found</div>';
+                    container.innerHTML = '<div class="text-center mt-10 text-gray-500">No content found</div>';
                 }
-                container.innerHTML = htmlContent;
             } catch (e) {
-                container.innerHTML = `<div class="text-center mt-10 text-red-500">Error: ${e.message}</div>`;
+                container.innerHTML = `<div class="text-center mt-10 text-red-500">Error: Unable to fetch content</div>`;
             }
         }
         loadContent('videos', document.querySelector('.tab-btn'));
