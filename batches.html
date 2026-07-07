@@ -7,25 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f5f6f8; font-family: sans-serif; padding-bottom: 90px; }
-        .subject_card { 
-            background: #fff; border-radius: 12px; padding: 12px; 
-            display: flex; align-items: center; gap: 10px; cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eaeaea;
-        }
+        .subject_card { background: #fff; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
         .subject_card img { width: 50px; height: 50px; object-fit: contain; }
-        .subject-title { font-size: 14px; font-weight: 700; color: #111; line-height: 1.2; }
-        .teacher-name { font-size: 12px; color: #4f46e5; font-weight: 600; margin-top: 2px; }
-        .lecture-count { font-size: 11px; color: #666; margin-top: 2px; }
-        .header-brand {
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
-            color: white; padding: 16px; text-align: center;
-            font-size: 20px; font-weight: 800; margin-bottom: 20px;
-        }
-        .app-footer { 
-            position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; 
-            text-align: center; font-size: 12px; font-weight: 600; 
-            color: #666; background: #fff; border-top: 1px solid #eaeaea; z-index: 999;
-        }
+        .subject-title { font-size: 14px; font-weight: 700; color: #111; }
+        .teacher-name { font-size: 12px; color: #4f46e5; font-weight: 600; }
+        .header-brand { background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; padding: 16px; text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+        .app-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; color: #666; background: #fff; border-top: 1px solid #eaeaea; }
     </style>
 </head>
 <body>
@@ -40,10 +27,7 @@
         <div id="subjectsContainer" class="flex flex-col gap-3"></div>
     </div>
 
-    <div class="app-footer">
-        <div>Developed by - <span class="text-indigo-600">Devansh Sharma</span></div>
-        <div style="font-size: 10px; color: #999;">Powered by The DevCoderZ</div>
-    </div>
+    <div class="app-footer">Developed by - <span class="text-indigo-600">Devansh Sharma</span></div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
@@ -52,15 +36,13 @@
         if (!batchId) {
             document.getElementById("batchTitle").innerText = "Error: No Batch Selected";
         } else {
-            const url = `https://learnbyakp.onrender.com/api/penpencil/v1/batches/${batchId}/todays-schedule`;
-            
-            fetch(url)
+            fetch(`https://learnbyakp.onrender.com/api/penpencil/v1/batches/${batchId}/todays-schedule`)
                 .then(res => res.json())
                 .then(data => {
-                    const classes = data.data?.data || [];
+                    const classes = data.data || [];
                     renderClasses(classes);
                 })
-                .catch(err => {
+                .catch(() => {
                     document.getElementById("liveClassesContainer").innerHTML = '<p class="text-slate-400 text-sm p-2">No classes today.</p>';
                 });
 
@@ -70,32 +52,34 @@
                     const res = data.data || data;
                     document.getElementById("batchTitle").innerText = res.name || "Batch Details";
                     renderSubjects(res.subjects || []);
-                })
-                .catch(err => console.error("Error loading subjects"));
+                });
         }
 
         function renderClasses(classes) {
             const container = document.getElementById("liveClassesContainer");
             if (classes.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-sm p-2">No classes today.</p>';
+                container.innerHTML = '<p class="text-slate-400 text-sm p-2">No classes found.</p>';
             } else {
                 container.innerHTML = classes.map(item => {
-                    const d = item.data;
-                    const startTime = new Date(d.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const status = d.tag || (new Date() > new Date(d.endTime) ? "Ended" : "Scheduled");
-                    const statusColor = status === "Ended" ? "bg-red-50 text-red-500" : "bg-indigo-50 text-indigo-500";
-                    
+                    const now = new Date();
+                    const start = new Date(item.startTime);
+                    const end = new Date(item.endTime);
+                    let status = "Upcoming";
+                    let statusColor = "bg-blue-100 text-blue-600";
+
+                    if (now > end) { status = "Ended"; statusColor = "bg-red-100 text-red-600"; }
+                    else if (now >= start && now <= end) { status = "LIVE NOW"; statusColor = "bg-green-500 text-white animate-pulse"; }
+
                     return `
-                    <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1 cursor-pointer" 
-                         onclick="location.href='player.html?lectureId=${d._id}&batchId=${batchId}'">
+                    <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1" 
+                         onclick="location.href='player.html?lectureId=${item._id}&batchId=${batchId}'">
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] uppercase font-bold ${statusColor} px-2 py-0.5 rounded">${status}</span>
-                            <span class="text-[10px] font-bold text-slate-400">${startTime}</span>
+                            <span class="text-[10px] font-bold text-slate-400">${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <div class="text-xs font-bold text-slate-800 line-clamp-2">${d.topic}</div>
-                        <div class="text-[10px] text-slate-500 mt-1">${d.subjectId?.name || "General"}</div>
-                    </div>
-                `;
+                        <div class="text-xs font-bold text-slate-800 line-clamp-2">${item.topic}</div>
+                        <div class="text-[10px] text-slate-500 mt-1">${item.subjectId?.name || "Subject"}</div>
+                    </div>`;
                 }).join('');
             }
         }
@@ -103,18 +87,15 @@
         function renderSubjects(subjects) {
             const container = document.getElementById("subjectsContainer");
             container.innerHTML = subjects.map(sub => {
-                const teacher = sub.teacherIds?.map(t => `${t.firstName} ${t.lastName}`).join(", ") || "PW Faculty";
                 const img = (sub.imageId?.baseUrl) ? sub.imageId.baseUrl + sub.imageId.key : 'https://static.pw.live/react-batches/assets/svg/subjects/defaultSubject.svg';
                 return `
                     <div class="subject_card" onclick='location.href="chapters.html?batch_id=${batchId}&subject_id=${sub._id}"'>
                         <img src="${img}" alt="sub">
                         <div>
                             <div class="subject-title">${sub.subject || sub.name}</div>
-                            <div class="teacher-name">${teacher}</div>
                             <div class="lecture-count">${sub.lectureCount || 0} Lectures</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
     </script>
