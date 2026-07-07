@@ -42,7 +42,7 @@
                 if (tab === 'videos') {
                     finalUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=videos`;
                 } else {
-                    finalUrl = `https://devcoderz-player.vercel.app/api/notes?batchId=${bId}&subjectId=${sId}&topicId=${tId}&contentType=${tab}`;
+                    finalUrl = `https://devcoderz-player.vercel.app/api/notes.js?batchId=${bId}&subjectId=${sId}&topicId=${tId}&contentType=${tab}`;
                 }
 
                 const res = await fetch(finalUrl);
