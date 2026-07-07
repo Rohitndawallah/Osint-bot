@@ -14,7 +14,7 @@
     <div id="tabsContainer" class="flex gap-2 p-4 overflow-x-auto bg-white">
         <button onclick="loadContent('videos', this)" class="tab-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
         <button onclick="loadContent('notes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">Notes</button>
-        <button onclick="loadContent('dppNotes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
+        <button onclick="loadContent('dpp', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
     </div>
     <div id="contentContainer" class="p-4"></div>
 
@@ -37,23 +37,20 @@
             const container = document.getElementById('contentContainer');
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
 
-            const contentType = tab === 'dppNotes' ? 'dpp' : (tab === 'notes' ? 'notes' : 'videos');
-
             try {
-                // Primary API: Studyspark
-                const primaryUrl = `https://api.studyspark.study/api/batch/${bId}/subject/${sId}/contents?page=1&contentType=${contentType}&topicId=${tId}`;
-                const res = await fetch(primaryUrl);
-                const json = await res.json();
-                
-                let items = json.data || [];
-                
-                // Fallback Logic: Agar data na mile to purani API use karo
-                if (items.length === 0) {
-                    const fallbackUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=${tab}`;
-                    const fRes = await fetch(fallbackUrl);
-                    const fJson = await fRes.json();
-                    items = fJson.data || [];
+                let finalUrl = '';
+                if (tab === 'videos') {
+                    finalUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=videos`;
+                } else {
+                    const type = tab === 'dpp' ? 'dpp' : 'notes';
+                    const targetApi = `https://api.studyspark.study/api/batch/${bId}/subject/${sId}/contents?page=1&contentType=${type}&topicId=${tId}`;
+                    // Pwnewer proxy ke saath encode karke
+                    finalUrl = `https://pwnewer-2uh.pages.dev/api/pw?url=${encodeURIComponent(targetApi)}`;
                 }
+
+                const res = await fetch(finalUrl);
+                const json = await res.json();
+                const items = json.data || [];
 
                 if (items.length > 0) {
                     container.innerHTML = items.map(item => `
@@ -71,7 +68,7 @@
                     container.innerHTML = '<div class="text-center mt-10 text-gray-500">No content found</div>';
                 }
             } catch (e) {
-                container.innerHTML = `<div class="text-center mt-10 text-red-500">Error: Unable to fetch content</div>`;
+                container.innerHTML = `<div class="text-center mt-10 text-red-500">Error loading content</div>`;
             }
         }
         loadContent('videos', document.querySelector('.tab-btn'));
