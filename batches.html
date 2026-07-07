@@ -52,7 +52,7 @@
         if (!batchId) {
             document.getElementById("batchTitle").innerText = "Error: No Batch Selected";
         } else {
-            const url = `https://thestudyspark.site/api-server/v2/batches/${batchId}/todays-schedule`;
+            const url = `https://learnbyakp.onrender.com/api/penpencil/v1/batches/${batchId}/todays-schedule`;
             
             fetch(url)
                 .then(res => res.json())
