@@ -42,7 +42,7 @@
                 if (tab === 'videos') {
                     finalUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=videos`;
                 } else {
-                    finalUrl = `https://devcoderz-player.vercel.app/api/notes.js?batchId=${bId}&subjectId=${sId}&topicId=${tId}&contentType=${tab}`;
+                    finalUrl = `https://devcoderz-player.vercel.app/api/notes?batchId=${bId}&subjectId=${sId}&topicId=${tId}&contentType=${tab}`;
                 }
 
                 const res = await fetch(finalUrl);
@@ -50,17 +50,24 @@
                 const items = json.data || [];
 
                 if (items.length > 0) {
-                    container.innerHTML = items.map(item => `
+                    container.innerHTML = items.map(item => {
+                        const homework = item.homeworkIds && item.homeworkIds[0];
+                        const topicName = homework ? homework.topic : (item.topic || item.name || 'Untitled');
+                        const attachment = homework?.attachmentIds?.[0];
+                        const fileUrl = attachment ? `${attachment.baseUrl}${attachment.key}${attachment.name}` : '#';
+                        
+                        return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                             <div class="flex-1">
-                                <h3 class="font-bold text-sm text-gray-800">${item.topic || item.name || 'Untitled'}</h3>
-                                <p class="text-xs text-gray-500 mt-1">${item.videoDetails?.duration || ''}</p>
+                                <h3 class="font-bold text-sm text-gray-800">${topicName}</h3>
+                                <p class="text-xs text-gray-500 mt-1">${homework?.note || item.videoDetails?.duration || ''}</p>
                             </div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="window.location.href='${item.url ? item.url : 'player.html?lectureId='+ (item._id||'') +'&subjectId='+sId+'&batchId='+bId+'&topicId='+tId}'">
-                                ${item.url ? 'Download' : 'View'}
+                                    onclick="window.location.href='${item.url || fileUrl}'">
+                                ${item.url || fileUrl !== '#' ? 'Download' : 'View'}
                             </button>
-                        </div>`).join('');
+                        </div>`;
+                    }).join('');
                 } else {
                     container.innerHTML = '<div class="text-center mt-10 text-gray-500">No content found</div>';
                 }
