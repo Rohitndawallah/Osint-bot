@@ -38,12 +38,8 @@
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
 
             try {
-                let finalUrl = '';
-                if (tab === 'videos') {
-                    finalUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=videos`;
-                } else {
-                    finalUrl = `https://devcoderz-player.vercel.app/api/notes?batchId=${bId}&subjectId=${sId}&topicId=${tId}&contentType=${tab}`;
-                }
+                // Aapki nayi API URL
+                const finalUrl = `https://brainboxinstitute.in/api/contents?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
 
                 const res = await fetch(finalUrl);
                 const json = await res.json();
@@ -54,17 +50,19 @@
                         const homework = item.homeworkIds && item.homeworkIds[0];
                         const topicName = homework ? homework.topic : (item.topic || item.name || 'Untitled');
                         const attachment = homework?.attachmentIds?.[0];
-                        const fileUrl = attachment ? `https://corsproxy.io/?${encodeURIComponent(attachment.baseUrl + attachment.key + attachment.name)}` : '#';
+                        
+                        // Sahi link generation logic: baseUrl + key
+                        const fileUrl = attachment ? `${attachment.baseUrl}${attachment.key}` : '#';
 
                         return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                             <div class="flex-1">
                                 <h3 class="font-bold text-sm text-gray-800">${topicName}</h3>
-                                <p class="text-xs text-gray-500 mt-1">${homework?.note || item.videoDetails?.duration || ''}</p>
+                                <p class="text-xs text-gray-500 mt-1">${homework?.note || ''}</p>
                             </div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="window.open('${item.url || fileUrl}', '_blank')">
-                                ${item.url || fileUrl !== '#' ? 'Download' : 'View'}
+                                    onclick="window.open('${fileUrl}', '_blank')">
+                                Download
                             </button>
                         </div>`;
                     }).join('');
@@ -75,7 +73,7 @@
                 container.innerHTML = `<div class="text-center mt-10 text-red-500">Error loading content</div>`;
             }
         }
-        loadContent('videos', document.querySelector('.tab-btn'));
+        loadContent('notes', document.querySelector('.tab-btn:nth-child(2)'));
     </script>
 </body>
 </html>
