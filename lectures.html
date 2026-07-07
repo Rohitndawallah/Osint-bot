@@ -42,10 +42,7 @@
                 if (tab === 'videos') {
                     finalUrl = `https://DevCoderZ-player.vercel.app/api/lectures.js?batchId=${bId}&subjectId=${sId}&tag=${tId}&contentType=videos`;
                 } else {
-                    const type = tab === 'dpp' ? 'dpp' : 'notes';
-                    const targetApi = `https://api.studyspark.study/api/batch/${bId}/subject/${sId}/contents?page=1&contentType=${type}&topicId=${tId}`;
-                    // Pwnewer proxy ke saath encode karke
-                    finalUrl = `https://pwnewer-2uh.pages.dev/api/pw?url=${encodeURIComponent(targetApi)}`;
+                    finalUrl = `https://devcoderz-player.vercel.app/api/notes?batchId=${bId}&subjectId=${sId}&topicId=${tId}&contentType=${tab}`;
                 }
 
                 const res = await fetch(finalUrl);
