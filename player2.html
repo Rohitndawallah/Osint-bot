@@ -1,51 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; }
-        .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-family: sans-serif; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Secure Player</title>
+<script src="https://cdn.jsdelivr.net/npm/shaka-player@5.0.10/dist/shaka-player.compiled.js"></script>
+<style>
+body { margin:0; background:#000; color:#fff; font-family:sans-serif; overflow:hidden; }
+.shell { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
+#video { width: 100%; height: 100%; }
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); z-index: 100; cursor: pointer; }
+.btn { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 2px solid #fff; }
+.hidden { opacity: 0; pointer-events: none; }
+</style>
 </head>
 <body>
 
-    <div id="loader" class="loader">Loading Video Stream...</div>
-    <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+<div class="shell">
+    <div class="overlay" id="playBtn"><div class="btn">▶</div></div>
+    <video id="video" playsinline></video>
+</div>
 
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const batchId = params.get("batchId");
-        const lectureId = params.get("lectureId");
-        const subjectId = params.get("subjectId");
+<script>
+const params = new URLSearchParams(window.location.search);
+const apiUrl = `https://brainboxinstitute.in/api/video-url?batchId=${params.get("batchId")}&subjectId=${params.get("subjectId")}&scheduleId=${params.get("scheduleId")}`;
 
-        const apiUrl = `https://devcoderz-player.vercel.app/api/stream.js?batchId=${batchId}&lectureId=${lectureId}&subjectId=${subjectId}`;
+async function init() {
+    try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        const video = document.getElementById('video');
+        const player = new shaka.Player(video);
 
-        fetch(apiUrl)
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.url) {
-                    const match = data.url.match(/mediacdn\.pw\.live\/([a-f0-9-]+)\//);
-                    if (match && match[1]) {
-                        const videoId = match[1];
-                        const pimaxerUrl = `https://stream.pimaxer.in/${videoId}/master.m3u8`;
-                        const playerSrc = `https://devcoderz-player.vercel.app/rs45.html?Url=${encodeURIComponent(pimaxerUrl)}`;
-                        
-                        document.getElementById("videoPlayer").src = playerSrc;
-                        document.getElementById("loader").style.display = "none";
-                    } else {
-                        document.body.innerHTML = "<div class='loader'>Error: Could not extract Video ID</div>";
-                    }
-                } else {
-                    document.body.innerHTML = "<div class='loader'>Error: Video link not found</div>";
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                document.body.innerHTML = "<div class='loader'>Error loading stream</div>";
-            });
-    </script>
+        if (data.video_data?.keys) {
+            const keyPair = data.video_data.keys[0].split(':');
+            player.configure({ drm: { clearKeys: { [keyPair[0]]: keyPair[1] } } });
+        }
+
+        player.getNetworkingEngine().registerRequestFilter((type, request) => {
+            const url = new URL(request.uris[0]);
+            const masterUrl = new URL(data.video_data.url);
+            masterUrl.searchParams.forEach((v, k) => url.searchParams.set(k, v));
+            request.uris[0] = url.toString();
+        });
+
+        await player.load(data.video_data.url);
+        
+        document.getElementById('playBtn').onclick = () => {
+            video.play();
+            document.getElementById('playBtn').classList.add('hidden');
+        };
+    } catch (e) {
+        document.body.innerHTML = "Error: " + e.message;
+    }
+}
+init();
+</script>
 </body>
 </html>
