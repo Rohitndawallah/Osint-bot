@@ -54,8 +54,8 @@
                         const homework = item.homeworkIds && item.homeworkIds[0];
                         const topicName = homework ? homework.topic : (item.topic || item.name || 'Untitled');
                         const attachment = homework?.attachmentIds?.[0];
-                        const fileUrl = attachment ? `${attachment.baseUrl}${attachment.key}${attachment.name}` : '#';
-                        
+                        const fileUrl = attachment ? `https://corsproxy.io/?${encodeURIComponent(attachment.baseUrl + attachment.key + attachment.name)}` : '#';
+
                         return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                             <div class="flex-1">
@@ -63,7 +63,7 @@
                                 <p class="text-xs text-gray-500 mt-1">${homework?.note || item.videoDetails?.duration || ''}</p>
                             </div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="window.location.href='${item.url || fileUrl}'">
+                                    onclick="window.open('${item.url || fileUrl}', '_blank')">
                                 ${item.url || fileUrl !== '#' ? 'Download' : 'View'}
                             </button>
                         </div>`;
