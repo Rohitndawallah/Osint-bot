@@ -76,7 +76,7 @@
                 const res = await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${id}`);
                 const data = await res.json();
                 if(data?.data?.url) {
-                    window.location.href = `https://devcoderz-player.vercel.app/rs45.html?Url=${encodeURIComponent(data.data.url)}`;
+                    window.location.href = `https://devcoderz-player.vercel.app/?Url=${encodeURIComponent(data.data.url)}`;
                 } else {
                     alert("Link not found");
                 }
