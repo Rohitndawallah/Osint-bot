@@ -49,15 +49,23 @@
                 if (items.length > 0) {
                     container.innerHTML = items.map(item => {
                         const isVideo = tab === 'videos';
+                        let title = item.topic || (item.homeworkIds && item.homeworkIds[0]?.topic) || 'Untitled';
+                        let downloadUrl = '#';
+                        if (!isVideo && item.homeworkIds && item.homeworkIds[0]?.attachmentIds?.length > 0) {
+                            const att = item.homeworkIds[0].attachmentIds[0];
+                            downloadUrl = att.baseUrl + att.key;
+                        }
                         return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
-                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${item.topic || 'Untitled'}</h3></div>
+                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="${isVideo ? `openPlayerModal('${item._id}')` : `window.open('${item.attachmentUrl}', '_blank')`}">
+                                    onclick="${isVideo ? `openPlayerModal('${item._id}')` : `window.open('${downloadUrl}', '_blank')`}">
                                 ${isVideo ? 'Watch' : 'Download'}
                             </button>
                         </div>`;
                     }).join('');
+                } else {
+                    container.innerHTML = '<div class="text-center mt-10 text-gray-500">No content found</div>';
                 }
             } catch (e) { container.innerHTML = `<div class="text-center mt-10 text-red-500">Error</div>`; }
         }
@@ -67,7 +75,11 @@
             document.getElementById('p2Btn').onclick = async () => {
                 const res = await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${id}`);
                 const data = await res.json();
-                window.location.href = `https://devcoderz-player.vercel.app/rs45.html?Url=${encodeURIComponent(data.data.url.replace('.mpd', '.m3u8'))}`;
+                if(data?.data?.url) {
+                    window.location.href = `https://devcoderz-player.vercel.app/rs45.html?Url=${encodeURIComponent(data.data.url)}`;
+                } else {
+                    alert("Link not found");
+                }
             };
         }
         loadContent('videos', document.querySelector('.tab-btn'));
