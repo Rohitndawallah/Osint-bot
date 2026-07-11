@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lectures & Content</title>
+    <title>Content</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 pb-16">
@@ -17,13 +17,19 @@
         <button onclick="loadContent('dpp', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
     </div>
     <div id="contentContainer" class="p-4"></div>
-
+    <div id="playerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-xl w-80 shadow-xl">
+            <h2 class="text-lg font-bold mb-4">Select Player</h2>
+            <button id="p1Btn" class="w-full bg-blue-600 text-white py-2 rounded-lg mb-2 font-bold">Player 1</button>
+            <button id="p2Btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">Player 2</button>
+            <button onclick="document.getElementById('playerModal').classList.add('hidden')" class="w-full mt-4 text-gray-500 text-sm">Cancel</button>
+        </div>
+    </div>
     <script>
         const params = new URLSearchParams(window.location.search);
         const bId = params.get("batchId");
         const sId = params.get("subjectId");
         const tId = params.get("topicId");
-
         async function loadContent(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => {
                 b.classList.remove('bg-indigo-600', 'text-white');
@@ -33,35 +39,25 @@
                 btn.classList.add('bg-indigo-600', 'text-white');
                 btn.classList.remove('bg-white', 'border');
             }
-
             const container = document.getElementById('contentContainer');
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
-
             try {
-                const finalUrl = `https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
-
+                const finalUrl = `https://brainboxinstitute.in/api/contents?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
                 const res = await fetch(finalUrl);
                 const json = await res.json();
                 const items = json.data || [];
-
                 if (items.length > 0) {
                     container.innerHTML = items.map(item => {
                         const homework = item.homeworkIds && item.homeworkIds[0];
                         const topicName = homework ? homework.topic : (item.topic || item.name || 'Untitled');
                         const attachment = homework?.attachmentIds?.[0];
                         const fileUrl = attachment ? `${attachment.baseUrl}${attachment.key}` : '#';
-                        
                         const isVideo = tab === 'videos';
-                        const actionUrl = isVideo ? `player.html?videoUrl=${item.videoDetails?.url || ''}&id=${item._id}` : fileUrl;
-
                         return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-sm text-gray-800">${topicName}</h3>
-                                <p class="text-xs text-gray-500 mt-1">${homework?.note || item.videoDetails?.duration || ''}</p>
-                            </div>
+                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${topicName}</h3></div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="${isVideo ? `window.location.href='${actionUrl}'` : `window.open('${actionUrl}', '_blank')`}">
+                                    onclick="${isVideo ? `openPlayerModal('${item._id}')` : `window.open('${fileUrl}', '_blank')`}">
                                 ${isVideo ? 'Watch' : 'Download'}
                             </button>
                         </div>`;
@@ -72,6 +68,15 @@
             } catch (e) {
                 container.innerHTML = `<div class="text-center mt-10 text-red-500">Error loading content</div>`;
             }
+        }
+        function openPlayerModal(id) {
+            document.getElementById('playerModal').classList.remove('hidden');
+            document.getElementById('p1Btn').onclick = () => window.location.href = `player.html?batchId=${bId}&id=${id}`;
+            document.getElementById('p2Btn').onclick = async () => {
+                const res = await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${id}`);
+                const data = await res.json();
+                window.location.href = `https://devcoderz-player.vercel.app/rs45.html?Url=${encodeURIComponent(data.data.url.replace('.mpd', '.m3u8'))}`;
+            };
         }
         loadContent('videos', document.querySelector('.tab-btn'));
     </script>
