@@ -42,36 +42,28 @@
             const container = document.getElementById('contentContainer');
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
             try {
-                const finalUrl = `https://brainboxinstitute.in/api/contents?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
+                const finalUrl = `https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
                 const res = await fetch(finalUrl);
                 const json = await res.json();
                 const items = json.data || [];
                 if (items.length > 0) {
                     container.innerHTML = items.map(item => {
-                        const homework = item.homeworkIds && item.homeworkIds[0];
-                        const topicName = homework ? homework.topic : (item.topic || item.name || 'Untitled');
-                        const attachment = homework?.attachmentIds?.[0];
-                        const fileUrl = attachment ? `${attachment.baseUrl}${attachment.key}` : '#';
                         const isVideo = tab === 'videos';
                         return `
                         <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
-                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${topicName}</h3></div>
+                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${item.topic || 'Untitled'}</h3></div>
                             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="${isVideo ? `openPlayerModal('${item._id}')` : `window.open('${fileUrl}', '_blank')`}">
+                                    onclick="${isVideo ? `openPlayerModal('${item._id}')` : `window.open('${item.attachmentUrl}', '_blank')`}">
                                 ${isVideo ? 'Watch' : 'Download'}
                             </button>
                         </div>`;
                     }).join('');
-                } else {
-                    container.innerHTML = '<div class="text-center mt-10 text-gray-500">No content found</div>';
                 }
-            } catch (e) {
-                container.innerHTML = `<div class="text-center mt-10 text-red-500">Error loading content</div>`;
-            }
+            } catch (e) { container.innerHTML = `<div class="text-center mt-10 text-red-500">Error</div>`; }
         }
         function openPlayerModal(id) {
             document.getElementById('playerModal').classList.remove('hidden');
-            document.getElementById('p1Btn').onclick = () => window.location.href = `player.html?batchId=${bId}&id=${id}`;
+            document.getElementById('p1Btn').onclick = () => window.location.href = `player.html?batchId=${bId}&lectureId=${id}`;
             document.getElementById('p2Btn').onclick = async () => {
                 const res = await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${id}`);
                 const data = await res.json();
