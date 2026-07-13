@@ -3,115 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The DevCoderZ - Batches</title>
+    <title>Content</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #f5f6f8; font-family: sans-serif; padding-bottom: 90px; }
-        .subject_card { background: #fff; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
-        .subject_card img { width: 55px; height: 55px; object-fit: contain; }
-        .subject-title { font-size: 14px; font-weight: 700; color: #111; }
-        .header-brand { background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; padding: 16px; text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 20px; }
-        .app-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; color: #666; background: #fff; border-top: 1px solid #eaeaea; }
-    </style>
 </head>
-<body>
-
-    <div class="header-brand">The DevCoderZ</div>
-
-    <div class="max-w-md mx-auto p-4">
-        <h1 id="batchTitle" class="text-2xl font-extrabold text-indigo-600 mb-6">Loading...</h1>
-        <h2 class="text-md font-bold mb-3 text-slate-700">Today's Schedule</h2>
-        <div id="liveClassesContainer" class="flex gap-3 overflow-x-auto pb-3 mb-6"></div>
-        <h2 class="text-md font-bold mb-3 text-slate-700">Subjects</h2>
-        <div id="subjectsContainer" class="flex flex-col gap-3"></div>
+<body class="bg-gray-50 pb-16">
+    <nav class="h-16 bg-white border-b flex items-center px-4 sticky top-0 z-20">
+        <button onclick="history.back()" class="text-gray-600 font-bold text-sm">← Back</button>
+        <h1 class="ml-4 font-bold text-gray-800">Content</h1>
+    </nav>
+    <div id="tabsContainer" class="flex gap-2 p-4 overflow-x-auto bg-white">
+        <button onclick="loadContent('videos', this)" class="tab-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
+        <button onclick="loadContent('notes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">Notes</button>
+        <button onclick="loadContent('dpp', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
     </div>
-
-    <div id="warnModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-xl w-full max-w-xs shadow-xl text-center">
-            <h2 class="text-lg font-bold mb-4">Notice</h2>
-            <p class="text-sm text-gray-600 mb-6">Class has not started yet. Please wait for the teacher to go live.</p>
-            <button onclick="document.getElementById('warnModal').classList.add('hidden')" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">OK</button>
+    <div id="contentContainer" class="p-4"></div>
+    <div id="playerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-xl w-80 shadow-xl">
+            <h2 class="text-lg font-bold mb-4">Select Player</h2>
+            <button id="p1Btn" class="w-full bg-blue-600 text-white py-2 rounded-lg mb-2 font-bold">Player 1</button>
+            <button id="p2Btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">Player 2</button>
+            <button onclick="document.getElementById('playerModal').classList.add('hidden')" class="w-full mt-4 text-gray-500 text-sm">Cancel</button>
         </div>
     </div>
-
-    <div class="app-footer">Developed by - <span class="text-indigo-600">Devansh Sharma</span></div>
-
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const batchId = urlParams.get("batch_id");
-
-        if (!batchId) {
-            document.getElementById("batchTitle").innerText = "Error: No Batch Selected";
-        } else {
-            fetch(`https://learnbyakp.onrender.com/api/penpencil/v1/batches/${batchId}/todays-schedule`)
-                .then(res => res.json())
-                .then(data => {
-                    renderClasses(data.data || []);
-                })
-                .catch(() => {
-                    document.getElementById("liveClassesContainer").innerHTML = '<p class="text-slate-400 text-sm p-2">No classes today.</p>';
-                });
-
-            fetch(`https://devcoderz-player.vercel.app/api/all-batches-api2.js?batch_id=${encodeURIComponent(batchId)}`)
-                .then(res => res.json())
-                .then(data => {
-                    const res = data.data || data;
-                    document.getElementById("batchTitle").innerText = res.name || "Batch Details";
-                    renderSubjects(res.subjects || []);
-                });
+        const params = new URLSearchParams(window.location.search);
+        const bId = params.get("batchId");
+        const sId = params.get("subjectId");
+        const tId = params.get("topicId");
+        async function loadContent(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white');
+                b.classList.add('bg-white', 'border');
+            });
+            if(btn) { btn.classList.add('bg-indigo-600', 'text-white'); btn.classList.remove('bg-white', 'border'); }
+            const container = document.getElementById('contentContainer');
+            container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
+            try {
+                const res = await fetch(`https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`);
+                const json = await res.json();
+                const items = json.data || [];
+                container.innerHTML = items.length > 0 ? items.map(item => {
+                    const isVideo = tab === 'videos';
+                    const hasAttachment = item.hasAttachment || (item.homeworkIds && item.homeworkIds.length > 0);
+                    let title = item.topic || 'Untitled';
+                    let onclick = "";
+                    if (isVideo) {
+                        onclick = `openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}')`;
+                    } else if (hasAttachment) {
+                        const fileUrl = item.homeworkIds[0].attachmentIds[0].baseUrl + item.homeworkIds[0].attachmentIds[0].key;
+                        onclick = `window.location.href = 'https://thedevcoderz-pw.pages.dev/notes?url=${encodeURIComponent(fileUrl)}&title=${encodeURIComponent(title)}'`;
+                    } else {
+                        onclick = `window.open('#', '_blank')`;
+                    }
+                    return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
+                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
+                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="${onclick}">View</button>
+                        </div>`;
+                }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
+            } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error</div>'; }
         }
-
-        function playLive(item) {
-            const now = new Date();
-            const start = new Date(item.startTime);
-            if (now < start) {
-                document.getElementById("warnModal").classList.remove("hidden");
-            } else {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${batchId}&subject_id=${item.subjectId?._id || ''}&video_id=${item._id}&video_type=live&title=${encodeURIComponent(item.topic)}`;
-            }
+        function openPlayerModal(id, title) {
+            document.getElementById('playerModal').classList.remove('hidden');
+            document.getElementById('p1Btn').onclick = () => {
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
+            };
+            document.getElementById('p2Btn').onclick = () => {
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player2?lectureId=${id}&batchId=${bId}`;
+            };
         }
-
-        function renderClasses(classes) {
-            const container = document.getElementById("liveClassesContainer");
-            if (classes.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-sm p-2">No classes found.</p>';
-            } else {
-                container.innerHTML = classes.map(item => {
-                    const now = new Date();
-                    const start = new Date(item.startTime);
-                    const end = new Date(item.endTime);
-                    let status = "Upcoming";
-                    let statusColor = "bg-blue-100 text-blue-600";
-                    if (now > end) { status = "Ended"; statusColor = "bg-red-100 text-red-600"; }
-                    else if (now >= start && now <= end) { status = "LIVE NOW"; statusColor = "bg-green-500 text-white animate-pulse"; }
-                    return `
-                    <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1" 
-                         onclick='playLive(${JSON.stringify(item)})'>
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] uppercase font-bold ${statusColor} px-2 py-0.5 rounded">${status}</span>
-                            <span class="text-[10px] font-bold text-slate-400">${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        <div class="text-xs font-bold text-slate-800 line-clamp-2">${item.topic}</div>
-                        <div class="text-[10px] text-slate-500 mt-1">${item.subjectId?.name || "General"}</div>
-                    </div>`;
-                }).join('');
-            }
-        }
-
-        function renderSubjects(subjects) {
-            const container = document.getElementById("subjectsContainer");
-            container.innerHTML = subjects.map(sub => {
-                const img = sub.image || (sub.imageId?.baseUrl ? sub.imageId.baseUrl + sub.imageId.key : 'https://static.pw.live/react-batches/assets/svg/subjects/defaultSubject.svg');
-                return `
-                    <div class="subject_card" onclick='location.href="chapters.html?batch_id=${batchId}&subject_id=${sub._id}"'>
-                        <img src="${img}" alt="sub" onerror="this.src='https://static.pw.live/react-batches/assets/svg/subjects/defaultSubject.svg'">
-                        <div>
-                            <div class="subject-title">${sub.subject || sub.name}</div>
-                            <div class="text-[11px] text-slate-500">${sub.lectureCount || 0} Lectures</div>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
+        loadContent('videos', document.querySelector('.tab-btn'));
     </script>
 </body>
 </html>
