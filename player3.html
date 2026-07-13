@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>DevCoderz Player</title>
+<title>DevCoderz Ultra Fast Player</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -35,7 +35,7 @@ video{width:100%;height:100%;object-fit:contain}
 </style>
 </head>
 <body>
-<div id="status">Initializing...</div>
+<div id="status">Ready</div>
 <div class="overlay" id="tgPopup">
  <div class="box">
   <h2>Join our Telegram</h2>
@@ -63,18 +63,19 @@ video{width:100%;height:100%;object-fit:contain}
 </div>
 <script>
 let video=document.getElementById("video"),playerDiv=document.getElementById("player"),statusDiv=document.getElementById("status"),shakaPlayer,hideTimer,isDragging=false;
-function updateStatus(msg){statusDiv.textContent=msg;}
 async function init(){
- updateStatus("Fetching video link...");
+ statusDiv.textContent="Fetching...";
  const p=new URLSearchParams(location.search);
- const res=await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${p.get('batchId')||p.get('id')}&childId=${p.get('lectureId')||p.get('id')}`);
- const d=(await res.json()).data;
- updateStatus("Decrypting content...");
+ const res=await fetch(`https://devcoderz-api.vercel.app/api/video-url?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`);
+ const d=await res.json();
+ statusDiv.textContent="Loading...";
  shakaPlayer=new shaka.Player(video);
- const [kid,key]=d.drmDetails.data.split(':');
- shakaPlayer.configure({drm:{clearKeys:{[kid.replace(/-/g,'')]:key}}});
- updateStatus("Loading player...");
- await shakaPlayer.load(d.url);
+ if(d.clearKeys){
+  const kid=Object.keys(d.clearKeys)[0].replace(/-/g,'');
+  const key=d.clearKeys[Object.keys(d.clearKeys)[0]];
+  shakaPlayer.configure({drm:{clearKeys:{[kid]:key}}});
+ }
+ await shakaPlayer.load(d.manifestUrl);
  shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{
   let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);
  });
@@ -82,23 +83,12 @@ async function init(){
 }
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
-video.ontimeupdate=()=>{if(!isDragging){
- let p=(video.currentTime/video.duration)*100;
- document.getElementById("bar").style.width=document.getElementById("thumb").style.left=p+"%";
- document.getElementById("time").textContent=formatTime(video.currentTime)+" / "+formatTime(video.duration);
-}};
-function formatTime(s){
- let h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);
- return [h,m,sec].map(v=>(v<10?"0"+v:v)).join(":");
-}
-const seek = (e) => {
- let rect = document.getElementById("progress").getBoundingClientRect();
- let pos = Math.max(0, Math.min(1, ((e.clientX||e.touches[0].clientX) - rect.left) / rect.width));
- video.currentTime = pos * video.duration;
-};
-document.getElementById("progress").addEventListener("pointerdown", e => {isDragging=true; seek(e);});
-window.addEventListener("pointermove", e => {if(isDragging) seek(e);});
-window.addEventListener("pointerup", () => {isDragging=false;});
+video.ontimeupdate=()=>{if(!isDragging){let p=(video.currentTime/video.duration)*100;document.getElementById("bar").style.width=document.getElementById("thumb").style.left=p+"%";document.getElementById("time").textContent=fmt(video.currentTime)+" / "+fmt(video.duration);}};
+function fmt(s){let h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);return [h,m,sec].map(v=>(v<10?"0"+v:v)).join(":");}
+const seek=(e)=>{let rect=document.getElementById("progress").getBoundingClientRect();let pos=Math.max(0,Math.min(1,((e.clientX||e.touches[0].clientX)-rect.left)/rect.width));video.currentTime=pos*video.duration;};
+document.getElementById("progress").addEventListener("pointerdown",e=>{isDragging=true;seek(e);});
+window.addEventListener("pointermove",e=>{if(isDragging)seek(e);});
+window.addEventListener("pointerup",()=>{isDragging=false;});
 document.getElementById("play").onclick=()=>video.paused?video.play():video.pause();
 document.getElementById("back").onclick=()=>video.currentTime-=10;
 document.getElementById("fwd").onclick=()=>video.currentTime+=10;
