@@ -26,6 +26,14 @@
         <div id="subjectsContainer" class="flex flex-col gap-3"></div>
     </div>
 
+    <div id="warnModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-full max-w-xs shadow-xl text-center">
+            <h2 class="text-lg font-bold mb-4">Notice</h2>
+            <p class="text-sm text-gray-600 mb-6">Class has not started yet. Please wait for the teacher to go live.</p>
+            <button onclick="document.getElementById('warnModal').classList.add('hidden')" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">OK</button>
+        </div>
+    </div>
+
     <div class="app-footer">Developed by - <span class="text-indigo-600">Devansh Sharma</span></div>
 
     <script>
@@ -53,6 +61,16 @@
                 });
         }
 
+        function playLive(item) {
+            const now = new Date();
+            const start = new Date(item.startTime);
+            if (now < start) {
+                document.getElementById("warnModal").classList.remove("hidden");
+            } else {
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${batchId}&subject_id=${item.subjectId?._id || ''}&video_id=${item._id}&video_type=live&title=${encodeURIComponent(item.topic)}`;
+            }
+        }
+
         function renderClasses(classes) {
             const container = document.getElementById("liveClassesContainer");
             if (classes.length === 0) {
@@ -68,7 +86,7 @@
                     else if (now >= start && now <= end) { status = "LIVE NOW"; statusColor = "bg-green-500 text-white animate-pulse"; }
                     return `
                     <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1" 
-                         onclick="location.href='player.html?lectureId=${item._id}&batchId=${batchId}'">
+                         onclick='playLive(${JSON.stringify(item)})'>
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] uppercase font-bold ${statusColor} px-2 py-0.5 rounded">${status}</span>
                             <span class="text-[10px] font-bold text-slate-400">${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
