@@ -43,12 +43,22 @@
                 const json = await res.json();
                 const items = json.data || [];
                 container.innerHTML = items.length > 0 ? items.map(item => {
-                    const isVideo = tab === 'videos';
-                    let title = item.topic || 'Untitled';
-                    return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
-                            <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="${isVideo ? `openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}')` : `window.open('${item.url}', '_blank')`}">Watch</button>
-                        </div>`;
+                    if (tab === 'videos') {
+                        let title = item.topic || 'Untitled';
+                        return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
+                                <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
+                                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}')">Watch</button>
+                            </div>`;
+                    } else {
+                        return (item.homeworkIds || []).map(hw => {
+                            const fileUrl = hw.attachmentIds && hw.attachmentIds.length > 0 ? (hw.attachmentIds[0].baseUrl + hw.attachmentIds[0].key) : '#';
+                            const title = hw.topic || 'Untitled Note';
+                            return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
+                                    <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
+                                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.location.href = 'https://thedevcoderz-pw.pages.dev/notes?url=${encodeURIComponent(fileUrl)}&title=${encodeURIComponent(title)}'">View</button>
+                                </div>`;
+                        }).join('');
+                    }
                 }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
             } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error</div>'; }
         }
