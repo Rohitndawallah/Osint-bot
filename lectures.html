@@ -35,51 +35,33 @@
                 b.classList.remove('bg-indigo-600', 'text-white');
                 b.classList.add('bg-white', 'border');
             });
-            if(btn) {
-                btn.classList.add('bg-indigo-600', 'text-white');
-                btn.classList.remove('bg-white', 'border');
-            }
+            if(btn) { btn.classList.add('bg-indigo-600', 'text-white'); btn.classList.remove('bg-white', 'border'); }
             const container = document.getElementById('contentContainer');
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
             try {
-                const finalUrl = `https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`;
-                const res = await fetch(finalUrl);
+                const res = await fetch(`https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`);
                 const json = await res.json();
                 const items = json.data || [];
-                if (items.length > 0) {
-                    container.innerHTML = items.map(item => {
-                        const isVideo = tab === 'videos';
-                        let title = item.topic || (item.homeworkIds && item.homeworkIds[0]?.topic) || 'Untitled';
-                        let downloadUrl = '#';
-                        if (!isVideo && item.homeworkIds && item.homeworkIds[0]?.attachmentIds?.length > 0) {
-                            const att = item.homeworkIds[0].attachmentIds[0];
-                            downloadUrl = att.baseUrl + att.key;
-                        }
-                        return `
-                        <div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
+                container.innerHTML = items.length > 0 ? items.map(item => {
+                    const isVideo = tab === 'videos';
+                    let title = item.topic || 'Untitled';
+                    return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                             <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" 
-                                    onclick="${isVideo ? `openPlayerModal('${item._id}')` : `window.open('${downloadUrl}', '_blank')`}">
-                                ${isVideo ? 'Watch' : 'Download'}
-                            </button>
+                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="${isVideo ? `openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}')` : `window.open('#', '_blank')`}">Watch</button>
                         </div>`;
-                    }).join('');
-                } else {
-                    container.innerHTML = '<div class="text-center mt-10 text-gray-500">No content found</div>';
-                }
+                }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
             } catch (e) { container.innerHTML = `<div class="text-center mt-10 text-red-500">Error</div>`; }
         }
-        function openPlayerModal(id) {
+        function openPlayerModal(id, title) {
             document.getElementById('playerModal').classList.remove('hidden');
-            document.getElementById('p1Btn').onclick = () => window.location.href = `player.html?batchId=${bId}&lectureId=${id}`;
+            document.getElementById('p1Btn').onclick = () => {
+                const p = new URLSearchParams({ batch_id: bId, subject_id: sId, video_id: id, video_type: "new", title: title });
+                window.location.href = `player.html?proxyUrl=${encodeURIComponent("https://devcoderz-api.vercel.app/api/video-url?" + p.toString())}`;
+            };
             document.getElementById('p2Btn').onclick = async () => {
                 const res = await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${bId}&childId=${id}`);
                 const data = await res.json();
-                if(data?.data?.url) {
-                    window.location.href = `https://devcoderz-player.vercel.app/?Url=${encodeURIComponent(data.data.url)}`;
-                } else {
-                    alert("Link not found");
-                }
+                if(data?.data?.url) window.location.href = `https://devcoderz-player.vercel.app/?Url=${encodeURIComponent(data.data.url)}`;
             };
         }
         loadContent('videos', document.querySelector('.tab-btn'));
