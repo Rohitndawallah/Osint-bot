@@ -4,41 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevCoderz Player</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.ui.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/controls.css">
     <style>
         body, html { margin: 0; padding: 0; background: #000; width: 100%; height: 100%; overflow: hidden; }
-        video { width: 100%; height: 100%; }
+        #video-container { width: 100%; height: 100%; }
+        /* Commentary display styling */
+        #commentary { position: absolute; top: 10px; left: 10px; color: #00e5ff; font-family: monospace; z-index: 1000; pointer-events: none; text-shadow: 1px 1px 2px #000; }
     </style>
 </head>
 <body>
-    <video id="video" playsinline></video>
+    <div id="commentary">Initializing...</div>
+    <div id="video-container">
+        <video id="video" playsinline></video>
+    </div>
+
     <script>
         const v = document.getElementById('video');
+        const container = document.getElementById('video-container');
+        const commentary = document.getElementById('commentary');
         const p = new URLSearchParams(window.location.search);
 
-        async function init() {
-            // 1. URL parameters ko API format mein convert karo
-            const apiUrl = `https://devcoderz-api.vercel.app/api/video-url?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`;
-
-            // 2. API fetch karo
-            const res = await fetch(apiUrl);
-            const data = await res.json();
-
-            // 3. Shaka Player setup
-            const shakaPlayer = new shaka.Player(v);
-
-            // 4. DRM ClearKeys handle karo
-            if(data.clearKeys) {
-                const kid = Object.keys(data.clearKeys)[0].replace(/-/g, '');
-                const key = data.clearKeys[Object.keys(data.clearKeys)[0]];
-                shakaPlayer.configure({drm:{clearKeys:{[kid]: key}}});
-            }
-
-            // 5. Video load karo
-            await shakaPlayer.load(data.manifestUrl);
+        function log(msg) {
+            console.log(msg);
+            commentary.innerText = msg;
         }
 
-        init();
+        async function init() {
+            try {
+                log("Fetching video URL from API...");
+                const apiUrl = `https://devcoderz-api.vercel.app/api/video-url?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`;
+
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                if (!data.manifestUrl) throw new Error("Manifest URL not found!");
+
+                log("Video URL received. Fetching DRM Keys...");
+                
+                const shakaPlayer = new shaka.Player(v);
+                const ui = new shaka.ui.Overlay(shakaPlayer, container, v);
+
+                if(data.clearKeys) {
+                    const kid = Object.keys(data.clearKeys)[0].replace(/-/g, '');
+                    const key = data.clearKeys[Object.keys(data.clearKeys)[0]];
+                    log("Keys identified. Configuring DRM...");
+                    shakaPlayer.configure({drm:{clearKeys:{[kid]: key}}});
+                } else {
+                    log("No DRM keys needed. Proceeding...");
+                }
+
+                log("Loading Shaka Player...");
+                await shakaPlayer.load(data.manifestUrl);
+                
+                log("Ready to play!");
+                setTimeout(() => commentary.style.display = 'none', 3000);
+
+            } catch (e) {
+                log("Error: " + e.message);
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('shaka-ui-loaded', init);
     </script>
 </body>
 </html>
