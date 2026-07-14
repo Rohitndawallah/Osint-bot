@@ -53,7 +53,7 @@
                     document.getElementById("liveClassesContainer").innerHTML = '<p class="text-slate-400 text-sm p-2">No classes today.</p>';
                 });
 
-            fetch(`https://devcoderz-player.vercel.app/api/all-batches-api2.js?batch_id=${encodeURIComponent(batchId)}`)
+            fetch(`https://devcoderz-player.vercel.app/api/all-batches-api2?batch_id=${encodeURIComponent(batchId)}`)
                 .then(res => res.json())
                 .then(data => {
                     const res = data.data || data;
@@ -68,7 +68,7 @@
             if (now < start) {
                 document.getElementById("warnModal").classList.remove("hidden");
             } else {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${batchId}&subject_id=${item.subjectId?._id || ''}&video_id=${item._id}&video_type=live&title=${encodeURIComponent(item.topic)}`;
+                                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&topic_id=${tId}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
             }
         }
 
