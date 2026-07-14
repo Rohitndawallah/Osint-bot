@@ -65,7 +65,7 @@
         function openPlayerModal(id, title) {
             document.getElementById('playerModal').classList.remove('hidden');
             document.getElementById('p1Btn').onclick = () => {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&topic_id=${tId}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&lecture_id=${lectureId}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
             };
             document.getElementById('p2Btn').onclick = () => {
                 window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&topic_id=${tId}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
