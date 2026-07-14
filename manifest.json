@@ -1,7 +1,7 @@
 {
-  "name": "The DevCoderZ Player",
-  "short_name": "DevCoderZ",
-  "start_url": "/PW/",
+  "name": "The DevCoderZ PW",
+  "short_name": "The DevCoderZ",
+  "start_url": "/index.html/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
