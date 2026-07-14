@@ -64,7 +64,7 @@ video{width:100%;height:100%;object-fit:contain}
 </div>
 <script>
 let video=document.getElementById("video"),playerDiv=document.getElementById("player"),statusDiv=document.getElementById("status"),shakaPlayer,hideTimer,isDragging=false;
-video.preservesPitch=false;
+video.preservesPitch=true;
 shakaPlayer=new shaka.Player(video);
 shakaPlayer.configure({streaming:{rebufferingGoal:2,bufferBehind:30,alwaysStreamAllChannels:true},drm:{retryParameters:{maxAttempts:2}}});
 shakaPlayer.getNetworkingEngine().registerRequestFilter((type,request)=>{if(window.signedParams&&(type===shaka.net.NetworkingEngine.RequestType.SEGMENT||type===shaka.net.NetworkingEngine.RequestType.MANIFEST)){request.uris=request.uris.map(uri=>uri+(uri.includes('?')?'&':'?')+window.signedParams);}});
