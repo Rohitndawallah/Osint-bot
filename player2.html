@@ -71,7 +71,7 @@ shakaPlayer.getNetworkingEngine().registerRequestFilter((type,request)=>{if(wind
 async function init(){
  statusDiv.textContent="Fetching...";
  const p=new URLSearchParams(location.search);
- const res=await fetch(`https://devcoderz-api.vercel.app/api/video-url?batchId=${p.get('batchId')}&subjectId=${p.get('subjectId')}&childId=${p.get('childId')}&videoId=${p.get('videoId')}&accessToken=&refreshToken=`);
+ const res=await fetch(`https://devcoderz-api.vercel.app/api/video-url?batchId=${p.get('batch_id')}&subjectId=${p.get('subject_id')}&childId=${p.get('topic_id')}&videoId=${p.get('video_id')}&accessToken=&refreshToken=`);
  const data=await res.json();
  window.signedParams=data.data.signedUrl.substring(1);
  const masterUrl="https://rangexcoder-backend.onrender.com"+data.data.url+data.data.signedUrl;
