@@ -67,7 +67,7 @@ let video=document.getElementById("video"),playerDiv=document.getElementById("pl
 async function init(){
  statusDiv.textContent="Fetching...";
  const p=new URLSearchParams(location.search);
- const res=await fetch(`https://devcoderz-api.vercel.app/api/video-url?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`);
+ const res=await fetch(`https://devcoderz-api.vercel.app/api/video?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`);
  const d=await res.json();
  statusDiv.textContent="Loading...";
  shakaPlayer=new shaka.Player(video);
