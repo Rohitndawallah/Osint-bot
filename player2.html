@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>DevCoderZ Ultra Smooth Player</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.12.6/shaka-player.compiled.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:none}
@@ -70,7 +70,7 @@ async function init(){
   const p=new URLSearchParams(location.search);
   const res=await fetch(`https://devcoderz-api.vercel.app/api/video?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`);
   const d=await res.json();
-  const manifest = d.manifestUrl || d.data?.manifestUrl;
+  const manifest = d.manifestUrl;
   if(!manifest) throw new Error("Manifest URL not found");
   statusDiv.textContent="Loading...";
   shakaPlayer=new shaka.Player(video);
