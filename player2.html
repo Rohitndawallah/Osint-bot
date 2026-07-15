@@ -70,17 +70,18 @@ async function init(){
   const p=new URLSearchParams(location.search);
   const res=await fetch(`https://devcoderz-api.vercel.app/api/video?batch_id=${p.get('batch_id')}&subject_id=${p.get('subject_id')}&video_id=${p.get('video_id')}&video_type=${p.get('video_type')}&title=${encodeURIComponent(p.get('title'))}`);
   const d=await res.json();
-  if(!d.manifestUrl) throw new Error("Manifest URL not found");
+  const manifest = d.manifestUrl || d.data?.manifestUrl;
+  if(!manifest) throw new Error("Manifest URL not found");
   statusDiv.textContent="Loading...";
   shakaPlayer=new shaka.Player(video);
   if(d.clearKeys){
    const k=Object.entries(d.clearKeys)[0];
    shakaPlayer.configure({drm:{clearKeys:{[k[0].replace(/-/g,'')]:k[1]}}});
   }
-  await shakaPlayer.load(d.manifestUrl);
+  await shakaPlayer.load(manifest);
   shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);});
   statusDiv.style.display="none";
- }catch(err){statusDiv.textContent="Error: "+err.message;}
+ }catch(err){statusDiv.textContent="Error: "+err.message;console.error(err);}
 }
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
