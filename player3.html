@@ -8,11 +8,7 @@
 
     <script>
         const video = document.getElementById('video');
-        const videoPlayer = new shaka.Player(video);
-
-        videoPlayer.addEventListener('error', (event) => {
-            console.error("Player Error:", event.detail);
-        });
+        const player = new shaka.Player(video);
 
         async function initPlayer() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -22,30 +18,30 @@
                 const response = await fetch(apiUrl);
                 const data = await response.json();
 
-                if (!data.manifestUrl) {
-                    console.error("Failed to retrieve manifest URL");
+                if (!data.success || !data.manifestUrl || !data.clearKeys) {
+                    console.error("API Error: Invalid response structure", data);
                     return;
                 }
-                console.log("URL found:", data.manifestUrl);
 
-                if (!data.clearKeys) {
-                    console.error("Failed to retrieve clear keys");
-                    return;
-                }
-                console.log("Keys found:", data.clearKeys);
+                console.log("Manifest URL received:", data.manifestUrl);
+                console.log("ClearKeys received:", data.clearKeys);
 
-                videoPlayer.configure({
+                player.configure({
                     drm: {
                         clearKeys: data.clearKeys
                     }
                 });
 
-                await videoPlayer.load(data.manifestUrl);
-                console.log("Video loaded successfully");
-            } catch (e) {
-                console.error("Critical error:", e);
+                await player.load(data.manifestUrl);
+                console.log("Video playback started successfully.");
+            } catch (error) {
+                console.error("Error loading video:", error);
             }
         }
+
+        player.addEventListener('error', (event) => {
+            console.error("Shaka Player Error Code:", event.detail.code, "Object:", event.detail);
+        });
 
         initPlayer();
     </script>
