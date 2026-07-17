@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="/manifest.json">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Content</title>
@@ -49,7 +47,7 @@
                         let title = item.topic || 'Untitled';
                         return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                                 <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
-                                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}')">Watch</button>
+                                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}', '${item.lectureId || ''}')">Watch</button>
                             </div>`;
                     } else {
                         return (item.homeworkIds || []).map(hw => {
@@ -64,14 +62,12 @@
                 }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
             } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error</div>'; }
         }
-        function openPlayerModal(id, title) {
+        function openPlayerModal(id, title, lectureId) {
             document.getElementById('playerModal').classList.remove('hidden');
-            document.getElementById('p1Btn').onclick = () => {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&lecture_id=${lecture_id}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
-            };
-            document.getElementById('p2Btn').onclick = () => {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${bId}&subject_id=${sId}&topic_id=${tId}&video_id=${id}&video_type=new&title=${encodeURIComponent(title)}`;
-            };
+            const baseUrl = '/player2';
+            const query = `?videoId=${id}&schId=${tId}&batchId=${bId}&subjectId=${sId}&lectureId=${lectureId}&title=${encodeURIComponent(title)}`;
+            document.getElementById('p1Btn').onclick = () => window.location.href = baseUrl + query;
+            document.getElementById('p2Btn').onclick = () => window.location.href = baseUrl + query;
         }
         loadContent('videos', document.querySelector('.tab-btn'));
     </script>
