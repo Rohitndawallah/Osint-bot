@@ -58,11 +58,11 @@
                     } else {
                         return (item.homeworkIds || []).map(hw => {
                             const att = hw.attachmentIds && hw.attachmentIds.length > 0 ? hw.attachmentIds[0] : null;
-                            const fileUrl = (att && att.key) ? (att.baseUrl + att.key) : null;
+                            const fileUrl = (att && att.key && att.key.length > 1) ? (att.baseUrl + att.key) : '#';
                             const title = hw.topic || 'Untitled';
                             return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                                     <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
-                                    ${fileUrl ? `<button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.open('${fileUrl}', '_blank')">View</button>` : `<button class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold">No File</button>`}
+                                    ${fileUrl !== '#' ? `<button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.open('${fileUrl}', '_blank')">View</button>` : `<button class="bg-gray-300 text-white px-4 py-2 rounded-lg text-sm font-bold cursor-not-allowed">N/A</button>`}
                                 </div>`;
                         }).join('');
                     }
