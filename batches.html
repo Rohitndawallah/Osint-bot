@@ -36,14 +36,6 @@
         </div>
     </div>
 
-    <div id="warnModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-xl w-full max-w-xs shadow-xl text-center">
-            <h2 class="text-lg font-bold mb-4">Notice</h2>
-            <p class="text-sm text-gray-600 mb-6">Class has not started yet. Please wait for the teacher to go live.</p>
-            <button onclick="document.getElementById('warnModal').classList.add('hidden')" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">OK</button>
-        </div>
-    </div>
-
     <div class="app-footer">Developed by - <span class="text-indigo-600">Devansh Sharma</span></div>
 
     <script>
@@ -72,21 +64,14 @@
         }
 
         function playLive(item) {
-            const now = new Date();
-            const start = new Date(item.startTime);
-            if (now < start) {
-                document.getElementById('warnModal').classList.remove('hidden');
-                return;
-            }
-            
-            const sId = item.subjectId?._id || item.subjectId;
-            const tId = item.topicId;
-            const vId = item.videoUrl;
+            const sId = item.batchSubjectId;
+            const tId = item.tags && item.tags.length > 0 ? item.tags[0]._id : '';
+            const vId = item._id;
             const title = item.topic;
-            
+
             document.getElementById('playerModal').classList.remove('hidden');
             const query = `?batch_id=${batchId}&subject_id=${sId}&topic_id=${tId}&video_id=${vId}&video_type=live&title=${encodeURIComponent(title)}`;
-            
+
             document.getElementById('p1Btn').onclick = () => window.location.href = `https://thedevcoderz-pw.pages.dev/player2${query}`;
             document.getElementById('p2Btn').onclick = () => window.location.href = `https://thedevcoderz-pw.pages.dev/player2${query}`;
         }
@@ -104,9 +89,11 @@
                     let statusColor = "bg-blue-100 text-blue-600";
                     if (now > end) { status = "Ended"; statusColor = "bg-red-100 text-red-600"; }
                     else if (now >= start && now <= end) { status = "LIVE NOW"; statusColor = "bg-green-500 text-white animate-pulse"; }
+                    
+                    const itemStr = JSON.stringify(item).replace(/'/g, "&#39;");
                     return `
                     <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-1" 
-                         onclick='playLive(${JSON.stringify(item)})'>
+                         onclick='playLive(${itemStr})'>
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] uppercase font-bold ${statusColor} px-2 py-0.5 rounded">${status}</span>
                             <span class="text-[10px] font-bold text-slate-400">${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
