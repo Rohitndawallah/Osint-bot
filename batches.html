@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The DevCoderZ - Batches</title>
@@ -25,6 +25,15 @@
         <div id="liveClassesContainer" class="flex gap-3 overflow-x-auto pb-3 mb-6"></div>
         <h2 class="text-md font-bold mb-3 text-slate-700">Subjects</h2>
         <div id="subjectsContainer" class="flex flex-col gap-3"></div>
+    </div>
+
+    <div id="playerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-80 shadow-xl">
+            <h2 class="text-lg font-bold mb-4">Select Player</h2>
+            <button id="p1Btn" class="w-full bg-blue-600 text-white py-2 rounded-lg mb-2 font-bold">Player 1</button>
+            <button id="p2Btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">Player 2</button>
+            <button onclick="document.getElementById('playerModal').classList.add('hidden')" class="w-full mt-4 text-gray-500 text-sm">Cancel</button>
+        </div>
     </div>
 
     <div id="warnModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
@@ -67,13 +76,19 @@
             const start = new Date(item.startTime);
             if (now < start) {
                 document.getElementById('warnModal').classList.remove('hidden');
-            } else {
-                const sId = item.subjectId?._id || item.subjectId;
-                const tId = item.topicId;
-                const vId = item.videoUrl;
-                const title = item.topic;
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player?batch_id=${batchId}&subject_id=${sId}&topic_id=${tId}&video_id=${vId}&video_type=new&title=${encodeURIComponent(title)}`;
+                return;
             }
+            
+            const sId = item.subjectId?._id || item.subjectId;
+            const tId = item.topicId;
+            const vId = item.videoUrl;
+            const title = item.topic;
+            
+            document.getElementById('playerModal').classList.remove('hidden');
+            const query = `?batch_id=${batchId}&subject_id=${sId}&topic_id=${tId}&video_id=${vId}&video_type=new&title=${encodeURIComponent(title)}`;
+            
+            document.getElementById('p1Btn').onclick = () => window.location.href = `https://thedevcoderz-pw.pages.dev/player${query}`;
+            document.getElementById('p2Btn').onclick = () => window.location.href = `https://thedevcoderz-pw.pages.dev/player${query}`;
         }
 
         function renderClasses(classes) {
