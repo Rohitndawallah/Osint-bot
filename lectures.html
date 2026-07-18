@@ -42,40 +42,44 @@
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
             
             try {
-                const res1 = await fetch(`https://pw.modgalaxy.in/api/token-free?type=contents&batchId=${bId}&subjectId=${sId}&topicSlug=${tId}&contentType=${tab}&page=1`);
-                const res2 = await fetch(`https://pw.modgalaxy.in/api/token-free?type=contents&batchId=${bId}&subjectId=${sId}&topicSlug=${tId}&contentType=${tab}&page=2`);
+                const [res1, res2] = await Promise.all([
+                    fetch(`https://pw.modgalaxy.in/api/token-free?type=contents&batchId=${bId}&subjectId=${sId}&topicSlug=${tId}&contentType=${tab}&page=1`),
+                    fetch(`https://pw.modgalaxy.in/api/token-free?type=contents&batchId=${bId}&subjectId=${sId}&topicSlug=${tId}&contentType=${tab}&page=2`)
+                ]);
                 const json1 = await res1.json();
                 const json2 = await res2.json();
                 const items = [...(json1.data || []), ...(json2.data || [])];
                 
-                container.innerHTML = items.length > 0 ? items.map(item => {
+                let htmlContent = '';
+                items.forEach(item => {
                     if (tab === 'videos') {
                         let title = item.topic || 'Untitled';
-                        return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
+                        htmlContent += `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
                                 <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
                                 <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${item._id}', '${title.replace(/'/g, "\\'")}', '${item.lectureId || ''}')">Watch</button>
                             </div>`;
-                    } else {
-                        return (item.homeworkIds || []).map(hw => {
-                            const att = hw.attachmentIds && hw.attachmentIds.length > 0 ? hw.attachmentIds[0] : null;
-                            const fileUrl = (att && att.key && att.key.length > 1) ? (att.baseUrl + att.key) : '#';
-                            const title = hw.topic || 'Untitled';
-                            return `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
-                                    <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
-                                    ${fileUrl !== '#' ? `<button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.open('${fileUrl}', '_blank')">View</button>` : `<button class="bg-gray-300 text-white px-4 py-2 rounded-lg text-sm font-bold cursor-not-allowed">N/A</button>`}
+                    } else if (item.homeworkIds) {
+                        item.homeworkIds.forEach(hw => {
+                            const att = (hw.attachmentIds && hw.attachmentIds[0]) ? hw.attachmentIds[0] : null;
+                            const fileUrl = (att && att.key && att.key.length > 5) ? (att.baseUrl + att.key) : null;
+                            if (fileUrl) {
+                                htmlContent += `<div class="bg-white p-4 mb-3 rounded-xl border flex items-center justify-between">
+                                    <div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${hw.topic || 'Untitled Note'}</h3></div>
+                                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="window.open('${fileUrl}', '_blank')">View</button>
                                 </div>`;
-                        }).join('');
+                            }
+                        });
                     }
-                }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
-            } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error: Could not load content</div>'; }
+                });
+                container.innerHTML = htmlContent || '<div class="text-center mt-10 text-gray-500">No content found</div>';
+            } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error: Could not load data</div>'; }
         }
 
         function openPlayerModal(id, title, lectureId) {
             document.getElementById('playerModal').classList.remove('hidden');
-            const baseUrl = '/player';
             const query = `?videoId=${id}&schId=${tId}&batchId=${bId}&subjectId=${sId}&lectureId=${lectureId}&title=${encodeURIComponent(title)}`;
-            document.getElementById('p1Btn').onclick = () => window.location.href = baseUrl + query;
-            document.getElementById('p2Btn').onclick = () => window.location.href = baseUrl + query;
+            document.getElementById('p1Btn').onclick = () => window.location.href = '/player2' + query;
+            document.getElementById('p2Btn').onclick = () => window.location.href = '/player2' + query;
         }
 
         loadContent('videos', document.querySelector('.tab-btn'));
