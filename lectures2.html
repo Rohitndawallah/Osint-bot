@@ -30,16 +30,24 @@
         const bId = params.get("batchId");
         const sId = params.get("subjectId");
         const tId = params.get("topicId");
+
         async function loadContent(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => {
                 b.classList.remove('bg-indigo-600', 'text-white');
                 b.classList.add('bg-white', 'border');
             });
             if(btn) { btn.classList.add('bg-indigo-600', 'text-white'); btn.classList.remove('bg-white', 'border'); }
+            
             const container = document.getElementById('contentContainer');
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
+
+            const page = (tab === 'videos') ? 2 : 1;
+            const apiUrl = (tab === 'videos') 
+                ? `https://devcoderz-player.vercel.app/api/notes?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=${page}`
+                : `https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=${page}`;
+
             try {
-                const res = await fetch(`https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&tag=${tId}&page=1`);
+                const res = await fetch(apiUrl);
                 const json = await res.json();
                 const items = json.data || [];
                 container.innerHTML = items.length > 0 ? items.map(item => {
@@ -62,6 +70,7 @@
                 }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
             } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error</div>'; }
         }
+
         function openPlayerModal(id, title, lectureId) {
             document.getElementById('playerModal').classList.remove('hidden');
             const baseUrl = '/player2';
@@ -69,6 +78,7 @@
             document.getElementById('p1Btn').onclick = () => window.location.href = baseUrl + query;
             document.getElementById('p2Btn').onclick = () => window.location.href = baseUrl + query;
         }
+
         loadContent('videos', document.querySelector('.tab-btn'));
     </script>
 </body>
