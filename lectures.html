@@ -42,7 +42,7 @@
             container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
             
             try {
-                const targetApi = `https://devcoderz-player.vercel.app/api/lectures?batchId=${bId}&subjectId=${sId}&contentType=${tab}&topicId=${tId}&page=1`;
+                const targetApi = `https://pw.modgalaxy.in/api/token-free?type=contents&batchId=${bId}&subjectId=${sId}&topicSlug=${tId}&contentType=${tab}&page=1`;
                 const res = await fetch(targetApi);
                 const json = await res.json();
                 const items = json.data || [];
@@ -65,7 +65,7 @@
                         }).join('');
                     }
                 }).join('') : '<div class="text-center mt-10 text-gray-500">No content found</div>';
-            } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error loading content</div>'; }
+            } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error: Check Console</div>'; }
         }
 
         function openPlayerModal(id, title, lectureId) {
