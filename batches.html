@@ -11,12 +11,17 @@
         .active-tab { border-bottom: 2px solid #4f46e5; color: #4f46e5; }
         .subject_card { background: #fff; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
         .subject-title { font-size: 14px; font-weight: 700; color: #111; }
-        .header-brand { background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; padding: 16px; text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+        .header-brand { background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; padding: 16px; text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .footer { position: fixed; bottom: 0; width: 100%; background: #4f46e5; color: white; text-align: center; padding: 10px; font-size: 12px; font-weight: 600; }
+        .back-btn { position: absolute; left: 16px; cursor: pointer; font-size: 24px; }
     </style>
 </head>
 <body>
 
-    <div class="header-brand">The DevCoderZ</div>
+    <div class="header-brand">
+        <span class="back-btn" onclick="history.back()">←</span>
+        The DevCoderZ
+    </div>
 
     <div class="max-w-md mx-auto p-4">
         <h1 id="batchTitle" class="text-2xl font-extrabold text-indigo-600 mb-4">Loading...</h1>
@@ -40,7 +45,19 @@
         </div>
     </div>
 
+    <div id="telegramModal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-2xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-black text-indigo-600 mb-2">The DevCoderZ</h2>
+            <p class="text-sm text-gray-600 mb-6">Join our official Telegram community for exclusive updates, study materials, and direct support!</p>
+            <a href="https://t.me/+8tZSJ5FyTXVjM2M1" target="_blank" class="block w-full bg-indigo-600 text-white py-3 rounded-xl font-bold mb-3">Join Telegram</a>
+            <button onclick="document.getElementById('telegramModal').classList.add('hidden')" class="text-gray-400 text-sm font-bold">Maybe later</button>
+        </div>
+    </div>
+
+    <div class="footer">Developed by Devansh Sharma</div>
+
     <script>
+        window.onload = () => setTimeout(() => document.getElementById('telegramModal').classList.remove('hidden'), 1000);
         const urlParams = new URLSearchParams(window.location.search);
         const batchId = urlParams.get("batch_id");
 
@@ -72,10 +89,16 @@
         }
 
         function playItem(item) {
+            if (item.homeworkIds && item.homeworkIds.length > 0) {
+                const note = item.homeworkIds[0];
+                if (note.attachmentIds && note.attachmentIds.length > 0) {
+                    window.location.href = `https://thedevcoderz-pw.pages.dev/player2?video_id=${note.attachmentIds[0].key}&title=${encodeURIComponent(note.topic)}&type=pdf`;
+                    return;
+                }
+            }
             const now = new Date();
             const start = new Date(item.startTime);
             const end = new Date(item.endTime);
-            
             if (now > end) {
                 window.location.href = `https://thedevcoderz-pw.pages.dev/player2?video_id=${item._id}&title=${encodeURIComponent(item.topic)}`;
             } else if (now < start) {
@@ -94,7 +117,7 @@
             container.innerHTML = announcements.map(item => {
                 let imgHtml = '';
                 if (item.attachment && item.attachment.baseUrl && item.attachment.key) {
-                    imgHtml = `<img src="${item.attachment.baseUrl}${item.attachment.key}" class="rounded-lg mb-3 w-full object-cover" onerror="this.style.display='none'">`;
+                    imgHtml = `<img src="${item.attachment.baseUrl}${item.attachment.key}" class="rounded-lg mb-3 w-full object-cover">`;
                 }
                 return `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
@@ -116,8 +139,8 @@
                 let color = now > end ? "text-red-500" : (now >= start ? "text-green-500 animate-pulse" : "text-blue-500");
                 
                 return `
-                <div class="bg-white p-3 rounded-xl shadow-sm border border-indigo-100 flex gap-3 cursor-pointer" onclick='playItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                    ${img ? `<img src="${img}" class="w-20 h-16 rounded-lg object-cover">` : ''}
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-indigo-100 flex gap-4 cursor-pointer" onclick='playItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                    ${img ? `<img src="${img}" class="w-28 h-20 rounded-lg object-cover">` : ''}
                     <div class="flex flex-col justify-center">
                         <div class="text-sm font-bold text-slate-800">${item.topic}</div>
                         <div class="text-[10px] font-bold ${color}">${status}</div>
