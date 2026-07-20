@@ -32,7 +32,6 @@
         <div id="announcementsView" class="hidden flex flex-col gap-4"></div>
     </div>
 
-    <!-- Timer Modal -->
     <div id="timerModal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl w-80 text-center">
             <h2 class="text-lg font-bold text-red-600 mb-2">Upcoming Class</h2>
@@ -93,11 +92,14 @@
         function renderAnnouncements(announcements) {
             const container = document.getElementById("announcementsView");
             container.innerHTML = announcements.map(item => {
-                const img = item.attachment ? item.attachment.baseUrl + item.attachment.key : '';
+                let imgHtml = '';
+                if (item.attachment && item.attachment.baseUrl && item.attachment.key) {
+                    imgHtml = `<img src="${item.attachment.baseUrl}${item.attachment.key}" class="rounded-lg mb-3 w-full object-cover" onerror="this.style.display='none'">`;
+                }
                 return `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
-                    ${img ? `<img src="${img}" class="rounded-lg mb-3 w-full object-cover">` : ''}
-                    <h3 class="font-bold text-indigo-600 text-sm mb-1">${item.heading}</h3>
+                    ${imgHtml}
+                    <h3 class="font-bold text-indigo-600 text-sm mb-1">${item.heading || 'Announcement'}</h3>
                     <p class="text-xs text-gray-600 leading-relaxed">${item.announcement.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-500 underline">$1</a>')}</p>
                 </div>`;
             }).join('');
