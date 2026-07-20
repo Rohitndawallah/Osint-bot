@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f5f6f8; font-family: sans-serif; padding-bottom: 90px; }
-        .tab-btn { flex: 1; padding: 10px; font-weight: 700; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab-btn { flex: 1; padding: 10px; font-weight: 700; cursor: pointer; border-bottom: 2px solid transparent; font-size: 13px; text-align: center; }
         .active-tab { border-bottom: 2px solid #4f46e5; color: #4f46e5; }
         .subject_card { background: #fff; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
         .subject-title { font-size: 14px; font-weight: 700; color: #111; }
@@ -22,15 +22,17 @@
         <h1 id="batchTitle" class="text-2xl font-extrabold text-indigo-600 mb-4">Loading...</h1>
         
         <div class="flex border-b border-gray-200 mb-6">
-            <div id="subTab" class="tab-btn active-tab" onclick="switchTab('subjects')">Subjects</div>
-            <div id="annTab" class="tab-btn" onclick="switchTab('announcements')">Announcements</div>
+            <div id="tab1" class="tab-btn active-tab" onclick="switchTab('subjects')">Subjects</div>
+            <div id="tab2" class="tab-btn" onclick="switchTab('schedule')">Schedule</div>
+            <div id="tab3" class="tab-btn" onclick="switchTab('announcements')">Announcements</div>
         </div>
 
         <div id="subjectsView">
-            <h2 class="text-md font-bold mb-3 text-slate-700">Today's Schedule</h2>
-            <div id="liveClassesContainer" class="flex gap-3 overflow-x-auto pb-3 mb-6"></div>
-            <h2 class="text-md font-bold mb-3 text-slate-700">All Subjects</h2>
             <div id="subjectsContainer" class="flex flex-col gap-3"></div>
+        </div>
+
+        <div id="scheduleView" class="hidden">
+            <div id="liveClassesContainer" class="flex flex-col gap-3"></div>
         </div>
 
         <div id="announcementsView" class="hidden flex flex-col gap-4"></div>
@@ -42,9 +44,12 @@
 
         function switchTab(tab) {
             document.getElementById('subjectsView').classList.toggle('hidden', tab !== 'subjects');
+            document.getElementById('scheduleView').classList.toggle('hidden', tab !== 'schedule');
             document.getElementById('announcementsView').classList.toggle('hidden', tab !== 'announcements');
-            document.getElementById('subTab').classList.toggle('active-tab', tab === 'subjects');
-            document.getElementById('annTab').classList.toggle('active-tab', tab === 'announcements');
+            
+            document.getElementById('tab1').classList.toggle('active-tab', tab === 'subjects');
+            document.getElementById('tab2').classList.toggle('active-tab', tab === 'schedule');
+            document.getElementById('tab3').classList.toggle('active-tab', tab === 'announcements');
         }
 
         if (batchId) {
@@ -78,17 +83,21 @@
         function renderClasses(classes) {
             const container = document.getElementById("liveClassesContainer");
             container.innerHTML = classes.length ? classes.map(item => `
-                <div class="min-w-[220px] bg-white p-4 rounded-xl shadow-sm border border-indigo-100" onclick='location.href="player.html?video_id=${item._id}"'>
-                    <div class="text-xs font-bold text-slate-800">${item.topic}</div>
-                </div>`).join('') : '<p class="text-slate-400 text-sm">No classes today.</p>';
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
+                    <div class="text-sm font-bold text-slate-800">${item.topic}</div>
+                    <div class="text-[10px] text-slate-400 font-bold mt-1">${new Date(item.startTime).toLocaleTimeString()}</div>
+                </div>`).join('') : '<p class="text-slate-400 text-sm p-4">No classes today.</p>';
         }
 
         function renderSubjects(subjects) {
-            document.getElementById("subjectsContainer").innerHTML = subjects.map(sub => `
-                <div class="subject_card" onclick='location.href="chapters.html?batch_id=${batchId}&subject_id=${sub._id}"'>
-                    <img src="${sub.image || 'https://static.pw.live/react-batches/assets/svg/subjects/defaultSubject.svg'}" class="w-10 h-10">
-                    <div class="subject-title">${sub.subject || sub.name}</div>
-                </div>`).join('');
+            document.getElementById("subjectsContainer").innerHTML = subjects.map(sub => {
+                const img = sub.image || (sub.imageId?.baseUrl ? sub.imageId.baseUrl + sub.imageId.key : 'https://static.pw.live/react-batches/assets/svg/subjects/defaultSubject.svg');
+                return `
+                    <div class="subject_card" onclick='location.href="chapters.html?batch_id=${batchId}&subject_id=${sub._id}"'>
+                        <img src="${img}" class="w-10 h-10 object-contain" onerror="this.src='https://static.pw.live/react-batches/assets/svg/subjects/defaultSubject.svg'">
+                        <div class="subject-title">${sub.subject || sub.name}</div>
+                    </div>`;
+            }).join('');
         }
     </script>
 </body>
