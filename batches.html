@@ -32,6 +32,15 @@
         <div id="announcementsView" class="hidden flex flex-col gap-4"></div>
     </div>
 
+    <!-- Timer Modal -->
+    <div id="timerModal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-80 text-center">
+            <h2 class="text-lg font-bold text-red-600 mb-2">Upcoming Class</h2>
+            <p class="text-sm text-gray-600 mb-4" id="timerText"></p>
+            <button onclick="document.getElementById('timerModal').classList.add('hidden')" class="w-full bg-gray-200 py-2 rounded-lg font-bold">Close</button>
+        </div>
+    </div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const batchId = urlParams.get("batch_id");
@@ -63,6 +72,24 @@
                 .then(data => renderAnnouncements(data.data || []));
         }
 
+        function playItem(item) {
+            const now = new Date();
+            const start = new Date(item.startTime);
+            const end = new Date(item.endTime);
+            
+            if (now > end) {
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player2?video_id=${item._id}&title=${encodeURIComponent(item.topic)}`;
+            } else if (now < start) {
+                const diff = Math.floor((start - now) / 1000);
+                const hrs = Math.floor(diff / 3600);
+                const mins = Math.floor((diff % 3600) / 60);
+                document.getElementById('timerText').innerText = `Class starts in ${hrs}h ${mins}m`;
+                document.getElementById('timerModal').classList.remove('hidden');
+            } else {
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player3?video_id=${item._id}&video_type=live`;
+            }
+        }
+
         function renderAnnouncements(announcements) {
             const container = document.getElementById("announcementsView");
             container.innerHTML = announcements.map(item => {
@@ -79,13 +106,20 @@
         function renderClasses(classes) {
             const container = document.getElementById("liveClassesContainer");
             container.innerHTML = classes.length ? classes.map(item => {
+                const now = new Date();
+                const start = new Date(item.startTime);
+                const end = new Date(item.endTime);
                 const img = item.videoDetails ? item.videoDetails.image : '';
+                let status = now > end ? "Ended" : (now >= start ? "LIVE NOW" : "Upcoming");
+                let color = now > end ? "text-red-500" : (now >= start ? "text-green-500 animate-pulse" : "text-blue-500");
+                
                 return `
-                <div class="bg-white p-3 rounded-xl shadow-sm border border-indigo-100 flex gap-3">
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-indigo-100 flex gap-3 cursor-pointer" onclick='playItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
                     ${img ? `<img src="${img}" class="w-20 h-16 rounded-lg object-cover">` : ''}
-                    <div>
+                    <div class="flex flex-col justify-center">
                         <div class="text-sm font-bold text-slate-800">${item.topic}</div>
-                        <div class="text-[10px] text-slate-500">${new Date(item.startTime).toLocaleTimeString()}</div>
+                        <div class="text-[10px] font-bold ${color}">${status}</div>
+                        <div class="text-[10px] text-slate-400 mt-1">${start.toLocaleTimeString()}</div>
                     </div>
                 </div>`;
             }).join('') : '<p class="text-slate-400 text-sm p-4">No classes today.</p>';
