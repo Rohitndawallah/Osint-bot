@@ -639,4 +639,811 @@
 </head>
 <body>
 
-<!--
+<!-- Loading Screen -->
+<div id="loadingScreen">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Loading <span>Lecture</span>...</div>
+</div>
+
+<!-- Error Screen -->
+<div id="errorScreen">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h2>Unable to Load Video</h2>
+    <p id="errorMsg">Something went wrong while loading the lecture. Please try again.</p>
+    <button id="retryBtn" onclick="initPlayer()"><i class="fas fa-redo"></i> Retry</button>
+</div>
+
+<!-- Keyboard Shortcuts Panel -->
+<div class="shortcuts-panel" id="shortcutsPanel">
+    <div class="shortcuts-card">
+        <h3>
+            Keyboard Shortcuts
+            <button onclick="toggleShortcuts()"><i class="fas fa-times"></i></button>
+        </h3>
+        <div class="shortcut-row"><span>Play / Pause</span><span class="shortcut-key">Space</span></div>
+        <div class="shortcut-row"><span>Seek Forward 10s</span><span class="shortcut-key">→</span></div>
+        <div class="shortcut-row"><span>Seek Backward 10s</span><span class="shortcut-key">←</span></div>
+        <div class="shortcut-row"><span>Volume Up</span><span class="shortcut-key">↑</span></div>
+        <div class="shortcut-row"><span>Volume Down</span><span class="shortcut-key">↓</span></div>
+        <div class="shortcut-row"><span>Mute / Unmute</span><span class="shortcut-key">M</span></div>
+        <div class="shortcut-row"><span>Fullscreen</span><span class="shortcut-key">F</span></div>
+        <div class="shortcut-row"><span>Picture-in-Picture</span><span class="shortcut-key">P</span></div>
+        <div class="shortcut-row"><span>Shortcuts Help</span><span class="shortcut-key">?</span></div>
+    </div>
+</div>
+
+<!-- Player Page -->
+<div class="player-page" id="playerPage" style="display:none;">
+    <!-- Top Bar -->
+    <div class="top-bar" id="topBar">
+        <div class="logo">DevCoderz</div>
+        <div class="divider"></div>
+        <div class="lecture-title" id="lectureTitle">Lecture Video Player</div>
+        <button class="ctrl-btn" onclick="toggleShortcuts()" title="Keyboard Shortcuts" style="width:auto;padding:0 8px;font-size:14px;color:var(--text-muted);">
+            <i class="fas fa-keyboard"></i>
+        </button>
+    </div>
+
+    <!-- Video Wrapper -->
+    <div class="video-wrapper" id="videoWrapper">
+        <video id="videoPlayer" playsinline></video>
+
+        <!-- Center Overlay -->
+        <div class="center-overlay" id="centerOverlay">
+            <button class="play-big-btn visible" id="bigPlayBtn" onclick="togglePlay()">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+
+        <!-- Skip Indicators -->
+        <div class="skip-indicator left" id="skipBack">
+            <i class="fas fa-backward"></i>
+            <span>10s</span>
+        </div>
+        <div class="skip-indicator right" id="skipFwd">
+            <i class="fas fa-forward"></i>
+            <span>10s</span>
+        </div>
+
+        <!-- OSD Bar -->
+        <div class="osd-bar" id="osdBar">
+            <i class="fas fa-volume-up" id="osdIcon"></i>
+            <div class="osd-track"><div class="osd-fill" id="osdFill"></div></div>
+            <div class="osd-val" id="osdVal">100%</div>
+        </div>
+
+        <!-- PiP Badge -->
+        <div class="pip-active-badge" id="pipBadge">
+            <i class="fas fa-external-link-alt"></i> PiP Active
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-wrapper" id="controlsWrapper">
+            <!-- Progress -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar-bg" id="progressBarBg">
+                    <div class="progress-buffered" id="progressBuffered"></div>
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-thumb" id="progressThumb"></div>
+                </div>
+                <div class="progress-tooltip" id="progressTooltip">0:00</div>
+            </div>
+            <!-- Buttons Row -->
+            <div class="controls-row">
+                <button class="ctrl-btn" id="playBtn" onclick="togglePlay()" title="Play/Pause">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="ctrl-btn" onclick="skip(-10)" title="Rewind 10s">
+                    <i class="fas fa-backward"></i>
+                </button>
+                <button class="ctrl-btn" onclick="skip(10)" title="Forward 10s">
+                    <i class="fas fa-forward"></i>
+                </button>
+
+                <div class="volume-group">
+                    <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <div class="volume-slider-wrap" id="volSliderWrap">
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+                    </div>
+                </div>
+
+                <div class="time-display">
+                    <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+                </div>
+
+                <div class="spacer"></div>
+
+                <!-- Speed -->
+                <div style="position:relative;">
+                    <button class="ctrl-btn" id="speedBtn" onclick="toggleSpeedMenu()" title="Playback Speed">
+                        <span class="speed-badge" id="speedBadge">1x</span>
+                    </button>
+                    <div class="speed-menu" id="speedMenu"></div>
+                </div>
+
+                <!-- Quality -->
+                <div style="position:relative;">
+                    <button class="ctrl-btn" id="qualityBtn" onclick="toggleQualityMenu()" title="Quality">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <div class="quality-menu" id="qualityMenu"></div>
+                </div>
+
+                <!-- PiP -->
+                <button class="ctrl-btn" id="pipBtn" onclick="togglePiP()" title="Picture-in-Picture">
+                    <i class="fas fa-clone"></i>
+                </button>
+
+                <!-- Fullscreen -->
+                <button class="ctrl-btn" id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Info -->
+    <div class="bottom-info" id="bottomInfo">
+        <div class="info-row">
+            <div class="info-chip">
+                <i class="fas fa-play-circle"></i>
+                <span>DASH Stream</span>
+            </div>
+            <div class="info-chip" id="qualityChip">
+                <i class="fas fa-signal"></i>
+                <span>Auto Quality</span>
+            </div>
+            <div class="info-chip" id="bitrateChip" style="display:none;">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>— kbps</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== CONFIG ==========
+const VIDEO_URL_API = 'https://devcoderz-api.vercel.app/api/video-url?batchId=698ad3519549b300a5e1cc6a&subjectId=69b5698ee506a608ee297ed1&childId=69ff18a7ef0d5bb3113d55b1&videoId=6a01eda5a15fce38297fb573&accessToken=&refreshToken=';
+const PLAY_API_BASE = 'https://devcoderz-api.vercel.app/api/play?url=';
+
+// ========== GLOBALS ==========
+let player = null;
+let video = null;
+let controlsTimeout = null;
+let osdTimeout = null;
+let isSeeking = false;
+let lastTapTime = 0;
+let lastTapX = 0;
+let currentSpeed = 1;
+const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+// ========== DOM ==========
+const $ = id => document.getElementById(id);
+
+// ========== INIT ==========
+window.addEventListener('DOMContentLoaded', initPlayer);
+
+async function initPlayer() {
+    $('loadingScreen').classList.remove('hidden');
+    $('loadingScreen').style.display = 'flex';
+    $('errorScreen').style.display = 'none';
+    $('playerPage').style.display = 'none';
+
+    try {
+        // Step 1: Fetch video URL from API
+        const resp = await fetch(VIDEO_URL_API);
+        const data = await resp.json();
+        
+        let mpdUrl = null;
+        
+        // Try to extract MPD URL from response
+        if (data && data.data && data.data.video_url) {
+            mpdUrl = data.data.video_url;
+        } else if (data && data.videoUrl) {
+            mpdUrl = data.videoUrl;
+        } else if (data && data.data && data.data.videoUrl) {
+            mpdUrl = data.data.videoUrl;
+        } else if (data && data.url) {
+            mpdUrl = data.url;
+        } else if (data && data.data && data.data.url) {
+            mpdUrl = data.data.url;
+        } else if (data && data.data && typeof data.data === 'string') {
+            mpdUrl = data.data;
+        } else if (data && data.video && data.video.url) {
+            mpdUrl = data.video.url;
+        } else if (data && data.result) {
+            if (typeof data.result === 'string') mpdUrl = data.result;
+            else if (data.result.url) mpdUrl = data.result.url;
+            else if (data.result.videoUrl) mpdUrl = data.result.videoUrl;
+        }
+
+        // Extract lecture name if available
+        let lectureName = 'Lecture Video';
+        if (data && data.data && data.data.name) lectureName = data.data.name;
+        else if (data && data.data && data.data.title) lectureName = data.data.title;
+        else if (data && data.name) lectureName = data.name;
+        else if (data && data.title) lectureName = data.title;
+        $('lectureTitle').textContent = lectureName;
+
+        if (!mpdUrl) {
+            // If API didn't return URL, use the known MPD URL directly
+            mpdUrl = 'https://d1d34p8vz63oiq.cloudfront.net/b1085e9a-f937-4977-b5d7-5cbebd968318/master.mpd?Signature=nM4LSXooMN0hCQ647OlUNbNQ-PUHx-U~r2KC5lmBy93fhRqOZ2byeC9Mn-B~9wAhMa1Ue~PuZ6zmvzeOrxLWZ50ENHwgw8SkN6c2KYeGttRT7N65P6Pjskxc19A3SvVmYtwiHxXfqg5liFU8YD9aCJFxZ6wQm88YEKzOrYDu1~rqKQGao7n7JrxjNcV~AUIhzouwzERqaFdLsXusZPPVeSXTjpyywTYULgjKbvTaMnNfQXki1ZLLPWyCtgxWfsGT8GdwIIP7KyRZbMNti6Jg-SNjLOt2j6aP8~1YaJUG4D4Py2GQA-wd1KKD2sqYnXbZayvZ1-Jc-QvFny-W4zr74w__&Key-Pair-Id=APKAXVKMENFCRKTG5XE2&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9kMWQzNHA4dno2M29pcS5jbG91ZGZyb250Lm5ldC9iMTA4NWU5YS1mOTM3LTQ5NzctYjVkNy01Y2JlYmQ5NjgzMTgvKiIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc4NDUzODA4NH19fV19';
+        }
+
+        // Step 2: Build proxy play URL
+        const playUrl = PLAY_API_BASE + encodeURIComponent(mpdUrl);
+
+        // Step 3: Initialize dash.js player
+        setupPlayer(playUrl, mpdUrl);
+
+    } catch (err) {
+        console.error('Init error:', err);
+        showError('Failed to fetch video data. Network error or API is down.\n\n' + err.message);
+    }
+}
+
+function setupPlayer(playUrl, directUrl) {
+    video = $('videoPlayer');
+
+    // Destroy existing player
+    if (player) {
+        try { player.destroy(); } catch(e) {}
+        player = null;
+    }
+
+    player = dashjs.MediaPlayer().create();
+    
+    player.updateSettings({
+        streaming: {
+            abr: {
+                autoSwitchBitrate: { video: true, audio: true }
+            },
+            buffer: {
+                bufferTimeAtTopQuality: 30,
+                fastSwitchEnabled: true
+            },
+            retryAttempts: {
+                MPD: 5,
+                MediaSegment: 5,
+                InitializationSegment: 5
+            },
+            retryIntervals: {
+                MPD: 2000,
+                MediaSegment: 2000
+            }
+        }
+    });
+
+    // Try proxy URL first, fallback to direct URL
+    let usedUrl = playUrl;
+    
+    player.on(dashjs.MediaPlayer.events.ERROR, function(e) {
+        console.warn('Dash error with proxy, trying direct URL...', e);
+        if (usedUrl === playUrl && directUrl) {
+            usedUrl = directUrl;
+            try {
+                player.destroy();
+                player = dashjs.MediaPlayer().create();
+                player.initialize(video, directUrl, false);
+                player.on(dashjs.MediaPlayer.events.ERROR, function(e2) {
+                    console.error('Direct URL also failed:', e2);
+                });
+                player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, onStreamReady);
+                player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, onQualityChange);
+            } catch(ex) {
+                console.error(ex);
+            }
+        }
+    });
+
+    player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, onStreamReady);
+    player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, onQualityChange);
+
+    player.initialize(video, playUrl, false);
+
+    // Show player page
+    $('loadingScreen').classList.add('hidden');
+    setTimeout(() => { $('loadingScreen').style.display = 'none'; }, 500);
+    $('playerPage').style.display = 'flex';
+
+    // Wire up events
+    wireVideoEvents();
+    wireControlEvents();
+    buildSpeedMenu();
+}
+
+function onStreamReady() {
+    console.log('Stream initialized');
+    buildQualityMenu();
+    updateBitrateInfo();
+}
+
+function onQualityChange() {
+    updateBitrateInfo();
+    buildQualityMenu();
+}
+
+function showError(msg) {
+    $('loadingScreen').style.display = 'none';
+    $('errorScreen').style.display = 'flex';
+    $('errorMsg').textContent = msg;
+}
+
+// ========== VIDEO EVENTS ==========
+function wireVideoEvents() {
+    video.addEventListener('play', () => {
+        $('playBtn').innerHTML = '<i class="fas fa-pause"></i>';
+        $('bigPlayBtn').classList.remove('visible');
+    });
+    video.addEventListener('pause', () => {
+        $('playBtn').innerHTML = '<i class="fas fa-play"></i>';
+        $('bigPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
+        $('bigPlayBtn').classList.add('visible');
+    });
+    video.addEventListener('ended', () => {
+        $('playBtn').innerHTML = '<i class="fas fa-redo"></i>';
+        $('bigPlayBtn').innerHTML = '<i class="fas fa-redo"></i>';
+        $('bigPlayBtn').classList.add('visible');
+        showControls();
+    });
+    video.addEventListener('timeupdate', updateProgress);
+    video.addEventListener('progress', updateBuffer);
+    video.addEventListener('loadedmetadata', () => {
+        $('duration').textContent = formatTime(video.duration);
+    });
+    video.addEventListener('waiting', () => {
+        $('bigPlayBtn').innerHTML = '<div class="loader-ring" style="width:36px;height:36px;border-width:3px;margin:0;"></div>';
+        $('bigPlayBtn').classList.add('visible');
+    });
+    video.addEventListener('canplay', () => {
+        if (!video.paused) {
+            $('bigPlayBtn').classList.remove('visible');
+        }
+    });
+    video.addEventListener('volumechange', () => {
+        updateVolumeIcon();
+        $('volumeSlider').value = video.muted ? 0 : video.volume;
+    });
+
+    // PiP events
+    video.addEventListener('enterpictureinpicture', () => { $('pipBadge').classList.add('show'); });
+    video.addEventListener('leavepictureinpicture', () => { $('pipBadge').classList.remove('show'); });
+}
+
+// ========== CONTROLS ==========
+function togglePlay() {
+    if (!video) return;
+    if (video.ended) {
+        video.currentTime = 0;
+        video.play();
+    } else if (video.paused) {
+        video.play();
+    } else {
+        video.pause();
+    }
+}
+
+function skip(seconds) {
+    if (!video) return;
+    video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seconds));
+    if (seconds < 0) flashSkip('skipBack');
+    else flashSkip('skipFwd');
+}
+
+function flashSkip(id) {
+    const el = $(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 600);
+}
+
+function toggleMute() {
+    if (!video) return;
+    video.muted = !video.muted;
+}
+
+function updateVolumeIcon() {
+    const btn = $('muteBtn');
+    if (video.muted || video.volume === 0) {
+        btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+    } else if (video.volume < 0.5) {
+        btn.innerHTML = '<i class="fas fa-volume-down"></i>';
+    } else {
+        btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+    }
+}
+
+function toggleFullscreen() {
+    const wrapper = $('videoWrapper');
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (wrapper.requestFullscreen) wrapper.requestFullscreen();
+        else if (wrapper.webkitRequestFullscreen) wrapper.webkitRequestFullscreen();
+        $('fsBtn').innerHTML = '<i class="fas fa-compress"></i>';
+        wrapper.classList.add('fullscreen-mode');
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        $('fsBtn').innerHTML = '<i class="fas fa-expand"></i>';
+        wrapper.classList.remove('fullscreen-mode');
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        $('fsBtn').innerHTML = '<i class="fas fa-expand"></i>';
+        $('videoWrapper').classList.remove('fullscreen-mode');
+    }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+    if (!document.webkitFullscreenElement) {
+        $('fsBtn').innerHTML = '<i class="fas fa-expand"></i>';
+        $('videoWrapper').classList.remove('fullscreen-mode');
+    }
+});
+
+async function togglePiP() {
+    if (!video) return;
+    try {
+        if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+        } else {
+            await video.requestPictureInPicture();
+        }
+    } catch (e) { console.warn('PiP failed:', e); }
+}
+
+// ========== PROGRESS ==========
+function updateProgress() {
+    if (isSeeking || !video || !video.duration) return;
+    const pct = (video.currentTime / video.duration) * 100;
+    $('progressFill').style.width = pct + '%';
+    $('progressThumb').style.left = pct + '%';
+    $('currentTime').textContent = formatTime(video.currentTime);
+}
+
+function updateBuffer() {
+    if (!video || !video.duration || !video.buffered.length) return;
+    const end = video.buffered.end(video.buffered.length - 1);
+    $('progressBuffered').style.width = (end / video.duration * 100) + '%';
+}
+
+function wireControlEvents() {
+    // Volume slider
+    $('volumeSlider').addEventListener('input', e => {
+        video.volume = parseFloat(e.target.value);
+        video.muted = false;
+        showOSD('volume', video.volume);
+    });
+
+    // Progress seeking
+    const pc = $('progressContainer');
+    pc.addEventListener('mousedown', startSeek);
+    pc.addEventListener('touchstart', startSeek, { passive: true });
+    pc.addEventListener('mousemove', hoverProgress);
+
+    // Show/hide controls on interaction
+    const vw = $('videoWrapper');
+    let touchMoved = false;
+
+    vw.addEventListener('mousemove', showControls);
+    vw.addEventListener('click', (e) => {
+        if (e.target.closest('.controls-wrapper') || e.target.closest('.speed-menu') || e.target.closest('.quality-menu')) return;
+        // Single tap to toggle play on desktop
+        togglePlay();
+    });
+
+    // Touch double-tap to seek
+    vw.addEventListener('touchstart', (e) => {
+        touchMoved = false;
+        if (e.target.closest('.controls-wrapper') || e.target.closest('.speed-menu') || e.target.closest('.quality-menu')) return;
+
+        const now = Date.now();
+        const x = e.touches[0].clientX;
+        
+        if (now - lastTapTime < 300 && Math.abs(x - lastTapX) < 100) {
+            // Double tap
+            e.preventDefault();
+            const rect = vw.getBoundingClientRect();
+            const relX = x - rect.left;
+            if (relX < rect.width / 2) {
+                skip(-10);
+            } else {
+                skip(10);
+            }
+            // Ripple
+            const ripple = document.createElement('div');
+            ripple.className = 'tap-ripple';
+            ripple.style.left = (x - rect.left - 30) + 'px';
+            ripple.style.top = (e.touches[0].clientY - rect.top - 30) + 'px';
+            vw.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+            lastTapTime = 0;
+        } else {
+            lastTapTime = now;
+            lastTapX = x;
+        }
+    }, { passive: false });
+
+    vw.addEventListener('touchmove', () => { touchMoved = true; });
+    vw.addEventListener('touchend', (e) => {
+        if (!touchMoved && !e.target.closest('.controls-wrapper')) {
+            showControls();
+        }
+    });
+
+    // Keyboard
+    document.addEventListener('keydown', handleKeyboard);
+
+    // Auto-hide controls
+    showControls();
+}
+
+function startSeek(e) {
+    isSeeking = true;
+    seekTo(e);
+    const moveEvt = e.type === 'touchstart' ? 'touchmove' : 'mousemove';
+    const endEvt = e.type === 'touchstart' ? 'touchend' : 'mouseup';
+    const onMove = (ev) => seekTo(ev);
+    const onEnd = () => {
+        isSeeking = false;
+        document.removeEventListener(moveEvt, onMove);
+        document.removeEventListener(endEvt, onEnd);
+    };
+    document.addEventListener(moveEvt, onMove);
+    document.addEventListener(endEvt, onEnd);
+}
+
+function seekTo(e) {
+    const rect = $('progressBarBg').getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let pct = (clientX - rect.left) / rect.width;
+    pct = Math.max(0, Math.min(1, pct));
+    $('progressFill').style.width = (pct * 100) + '%';
+    $('progressThumb').style.left = (pct * 100) + '%';
+    if (video && video.duration) {
+        video.currentTime = pct * video.duration;
+        $('currentTime').textContent = formatTime(video.currentTime);
+    }
+}
+
+function hoverProgress(e) {
+    const rect = $('progressBarBg').getBoundingClientRect();
+    let pct = (e.clientX - rect.left) / rect.width;
+    pct = Math.max(0, Math.min(1, pct));
+    const tooltip = $('progressTooltip');
+    tooltip.style.left = (pct * 100) + '%';
+    if (video && video.duration) {
+        tooltip.textContent = formatTime(pct * video.duration);
+    }
+}
+
+function showControls() {
+    $('controlsWrapper').classList.remove('hidden');
+    clearTimeout(controlsTimeout);
+    if (video && !video.paused) {
+        controlsTimeout = setTimeout(() => {
+            $('controlsWrapper').classList.add('hidden');
+            closeMenus();
+        }, 3500);
+    }
+}
+
+function closeMenus() {
+    $('speedMenu').classList.remove('show');
+    $('qualityMenu').classList.remove('show');
+}
+
+// ========== OSD ==========
+function showOSD(type, value) {
+    const bar = $('osdBar');
+    const icon = $('osdIcon');
+    const fill = $('osdFill');
+    const val = $('osdVal');
+
+    if (type === 'volume') {
+        if (value === 0) icon.className = 'fas fa-volume-mute';
+        else if (value < 0.5) icon.className = 'fas fa-volume-down';
+        else icon.className = 'fas fa-volume-up';
+        fill.style.width = (value * 100) + '%';
+        val.textContent = Math.round(value * 100) + '%';
+    } else if (type === 'brightness') {
+        icon.className = 'fas fa-sun';
+        fill.style.width = (value * 100) + '%';
+        val.textContent = Math.round(value * 100) + '%';
+    }
+
+    bar.classList.add('show');
+    clearTimeout(osdTimeout);
+    osdTimeout = setTimeout(() => bar.classList.remove('show'), 1200);
+}
+
+// ========== SPEED MENU ==========
+function buildSpeedMenu() {
+    const menu = $('speedMenu');
+    menu.innerHTML = '';
+    speeds.forEach(s => {
+        const item = document.createElement('div');
+        item.className = 'speed-menu-item' + (s === currentSpeed ? ' active' : '');
+        item.textContent = s === 1 ? 'Normal' : s + 'x';
+        item.onclick = () => setSpeed(s);
+        menu.appendChild(item);
+    });
+}
+
+function setSpeed(s) {
+    currentSpeed = s;
+    if (video) video.playbackRate = s;
+    $('speedBadge').textContent = s === 1 ? '1x' : s + 'x';
+    buildSpeedMenu();
+    $('speedMenu').classList.remove('show');
+}
+
+function toggleSpeedMenu() {
+    $('qualityMenu').classList.remove('show');
+    $('speedMenu').classList.toggle('show');
+}
+
+// ========== QUALITY MENU ==========
+function buildQualityMenu() {
+    if (!player) return;
+    const menu = $('qualityMenu');
+    menu.innerHTML = '';
+
+    try {
+        const bitrateList = player.getBitrateInfoListFor('video');
+        if (!bitrateList || bitrateList.length === 0) return;
+
+        const currentQuality = player.getQualityFor('video');
+        const autoSwitch = player.getSettings().streaming.abr.autoSwitchBitrate.video;
+
+        // Auto option
+        const autoItem = document.createElement('div');
+        autoItem.className = 'quality-menu-item' + (autoSwitch ? ' active' : '');
+        autoItem.textContent = 'Auto';
+        autoItem.onclick = () => {
+            player.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: true } } } });
+            buildQualityMenu();
+            $('qualityMenu').classList.remove('show');
+            $('qualityChip').querySelector('span').textContent = 'Auto Quality';
+        };
+        menu.appendChild(autoItem);
+
+        // Sort by height descending
+        const sorted = [...bitrateList].sort((a, b) => (b.height || b.bitrate) - (a.height || a.bitrate));
+
+        sorted.forEach(info => {
+            const item = document.createElement('div');
+            item.className = 'quality-menu-item' + (!autoSwitch && info.qualityIndex === currentQuality ? ' active' : '');
+            const label = info.height ? info.height + 'p' : Math.round(info.bitrate / 1000) + 'k';
+            const extra = info.bitrate ? ' (' + Math.round(info.bitrate / 1000) + ' kbps)' : '';
+            item.textContent = label + extra;
+            item.onclick = () => {
+                player.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } });
+                player.setQualityFor('video', info.qualityIndex);
+                buildQualityMenu();
+                $('qualityMenu').classList.remove('show');
+                $('qualityChip').querySelector('span').textContent = label;
+            };
+            menu.appendChild(item);
+        });
+    } catch(e) {
+        console.warn('Quality menu error:', e);
+    }
+}
+
+function toggleQualityMenu() {
+    $('speedMenu').classList.remove('show');
+    $('qualityMenu').classList.toggle('show');
+}
+
+function updateBitrateInfo() {
+    if (!player) return;
+    try {
+        const quality = player.getQualityFor('video');
+        const bitrateList = player.getBitrateInfoListFor('video');
+        if (bitrateList && bitrateList[quality]) {
+            const info = bitrateList[quality];
+            const chip = $('bitrateChip');
+            chip.style.display = 'flex';
+            chip.querySelector('span').textContent = Math.round(info.bitrate / 1000) + ' kbps';
+        }
+    } catch(e) {}
+}
+
+// ========== KEYBOARD ==========
+function handleKeyboard(e) {
+    if ($('shortcutsPanel').classList.contains('show') && e.key === 'Escape') {
+        toggleShortcuts();
+        return;
+    }
+    if (e.target.tagName === 'INPUT') return;
+    
+    switch(e.key) {
+        case ' ':
+        case 'k':
+            e.preventDefault();
+            togglePlay();
+            showControls();
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            skip(10);
+            showControls();
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            skip(-10);
+            showControls();
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            if (video) {
+                video.volume = Math.min(1, video.volume + 0.1);
+                video.muted = false;
+                showOSD('volume', video.volume);
+            }
+            showControls();
+            break;
+        case 'ArrowDown':
+            e.preventDefault();
+            if (video) {
+                video.volume = Math.max(0, video.volume - 0.1);
+                showOSD('volume', video.volume);
+            }
+            showControls();
+            break;
+        case 'm':
+        case 'M':
+            toggleMute();
+            showControls();
+            break;
+        case 'f':
+        case 'F':
+            toggleFullscreen();
+            break;
+        case 'p':
+        case 'P':
+            togglePiP();
+            break;
+        case '?':
+            toggleShortcuts();
+            break;
+    }
+}
+
+// ========== SHORTCUTS PANEL ==========
+function toggleShortcuts() {
+    $('shortcutsPanel').classList.toggle('show');
+}
+
+// ========== UTILS ==========
+function formatTime(sec) {
+    if (!sec || isNaN(sec)) return '0:00';
+    sec = Math.floor(sec);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    return m + ':' + String(s).padStart(2, '0');
+}
+
+// Close menus on click outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#speedBtn') && !e.target.closest('#speedMenu')) {
+        $('speedMenu').classList.remove('show');
+    }
+    if (!e.target.closest('#qualityBtn') && !e.target.closest('#qualityMenu')) {
+        $('qualityMenu').classList.remove('show');
+    }
+});
+
+// Update bitrate info periodically
+setInterval(() => {
+    if (player && video && !video.paused) {
+        updateBitrateInfo();
+    }
+}, 3000);
+</script>
+</body>
+</html>
