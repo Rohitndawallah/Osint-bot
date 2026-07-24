@@ -91,11 +91,14 @@
         function playItem(item) {
             let videoId = item.videoDetails?.id || item.videoDetails?._id || item._id;
             let videoName = encodeURIComponent(item.topic || '');
+            let currentBatchId = item.batchId || batchId;
+            let currentSubjectId = item.subjectId?._id || item.subjectId || '';
+
             const now = new Date();
             const start = new Date(item.startTime);
             const end = new Date(item.endTime);
             if (now > end) {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player2?batch_id=null&subject_id=null&video_id=${videoId}&video_name=${videoName}&video_type=new&play_type=Lecture&enc_video_url=`;
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player2?batch_id=${currentBatchId}&subject_id=${currentSubjectId}&video_id=${videoId}&video_name=${videoName}&video_type=new&play_type=Lecture&enc_video_url=`;
             } else if (now < start) {
                 const diff = Math.floor((start - now) / 1000);
                 const hrs = Math.floor(diff / 3600);
@@ -125,7 +128,15 @@
 
         function renderClasses(classes) {
             const container = document.getElementById("liveClassesContainer");
-            container.innerHTML = classes.length ? classes.map(item => {
+            const filteredClasses = classes.filter(item => {
+                const hasPdfOnly = item.homeworkIds && item.homeworkIds.length > 0 && (!item.videoDetails || !item.videoDetails.id);
+                const now = new Date();
+                const end = new Date(item.endTime);
+                const isEnded = now > end;
+                return !hasPdfOnly && !isEnded;
+            });
+
+            container.innerHTML = filteredClasses.length ? filteredClasses.map(item => {
                 const now = new Date();
                 const start = new Date(item.startTime);
                 const end = new Date(item.endTime);
