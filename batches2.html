@@ -28,7 +28,7 @@
 
         <div class="flex border-b border-gray-200 mb-6">
             <div id="tab1" class="tab-btn active-tab" onclick="switchTab('subjects')">Subjects</div>
-            <div id="tab2" class="tab-btn" onclick="switchTab('schedule')">Schedule</div>
+            <div id="tab2" class="tab-btn" onclick="switchTab('schedule')">Live Classes</div>
             <div id="tab3" class="tab-btn" onclick="switchTab('announcements')">Announcements</div>
         </div>
 
@@ -71,7 +71,7 @@
         }
 
         if (batchId) {
-            fetch(`https://learnbyakp.onrender.com/api/penpencil/v1/batches/${batchId}/todays-schedule`)
+            fetch(`https://proxy.streamvideo.co.in/fetch/api.penpencil.co/v1/batches/${batchId}/todays-schedule?isNewStudyMaterialFlow=true`)
                 .then(res => res.json())
                 .then(data => renderClasses(data.data || []));
 
@@ -89,20 +89,20 @@
         }
 
         function playItem(item) {
-            const subjectId = item.subjectId || item.subject?._id || "";
-            const lectureId = item._id || "";
             if (item.homeworkIds && item.homeworkIds.length > 0) {
                 const note = item.homeworkIds[0];
                 if (note.attachmentIds && note.attachmentIds.length > 0) {
-                    window.location.href = `https://thedevcoderz-pw.pages.dev/player2?batch_id=${batchId}&subject_id=${subjectId}&lecture_id=${note.attachmentIds[0].key}&title=${encodeURIComponent(note.topic)}&type=pdf`;
+                    const pdfUrl = note.attachmentIds[0].baseUrl + (note.attachmentIds[0].key || '');
+                    window.open(pdfUrl, '_blank');
                     return;
                 }
             }
             const now = new Date();
             const start = new Date(item.startTime);
             const end = new Date(item.endTime);
+            let videoId = item.videoDetails?.id || item.videoDetails?._id || item._id;
             if (now > end) {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player2?batch_id=${batchId}&subject_id=${subjectId}&lecture_id=${lectureId}&title=${encodeURIComponent(item.topic)}`;
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player2?video_id=${videoId}&title=${encodeURIComponent(item.topic)}`;
             } else if (now < start) {
                 const diff = Math.floor((start - now) / 1000);
                 const hrs = Math.floor(diff / 3600);
@@ -110,7 +110,7 @@
                 document.getElementById('timerText').innerText = `Class starts in ${hrs}h ${mins}m`;
                 document.getElementById('timerModal').classList.remove('hidden');
             } else {
-                window.location.href = `https://thedevcoderz-pw.pages.dev/player3?batch_id=${batchId}&subject_id=${subjectId}&video_id=${lectureId}&video_type=live`;
+                window.location.href = `https://thedevcoderz-pw.pages.dev/player3?video_id=${videoId}&video_type=live`;
             }
         }
 
