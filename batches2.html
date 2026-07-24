@@ -89,18 +89,10 @@
         }
 
         function playItem(item) {
-            if (item.homeworkIds && item.homeworkIds.length > 0) {
-                const note = item.homeworkIds[0];
-                if (note.attachmentIds && note.attachmentIds.length > 0) {
-                    const pdfUrl = note.attachmentIds[0].baseUrl + (note.attachmentIds[0].key || '');
-                    window.open(pdfUrl, '_blank');
-                    return;
-                }
-            }
+            let videoId = item.videoDetails?.id || item.videoDetails?._id || item._id;
             const now = new Date();
             const start = new Date(item.startTime);
             const end = new Date(item.endTime);
-            let videoId = item.videoDetails?.id || item.videoDetails?._id || item._id;
             if (now > end) {
                 window.location.href = `https://thedevcoderz-pw.pages.dev/player2?video_id=${videoId}&title=${encodeURIComponent(item.topic)}`;
             } else if (now < start) {
