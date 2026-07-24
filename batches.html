@@ -71,7 +71,7 @@
         }
 
         if (batchId) {
-            fetch(`https://learnbyakp.onrender.com/api/penpencil/v1/batches/${batchId}/todays-schedule`)
+            fetch(`https://proxy.streamvideo.co.in/fetch/api.penpencil.co/v1/batches/${batchId}/todays-schedule?isNewStudyMaterialFlow=true`)
                 .then(res => res.json())
                 .then(data => renderClasses(data.data || []));
 
