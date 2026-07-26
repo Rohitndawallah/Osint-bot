@@ -67,24 +67,30 @@ let video=document.getElementById("video"),playerDiv=document.getElementById("pl
 video.preservesPitch=true;
 shakaPlayer=new shaka.Player(video);
 shakaPlayer.configure({streaming:{rebufferingGoal:2,bufferBehind:30,alwaysStreamAllChannels:true},drm:{retryParameters:{maxAttempts:2}}});
-shakaPlayer.getNetworkingEngine().registerRequestFilter((type,request)=>{if(window.signedParams&&(type===shaka.net.NetworkingEngine.RequestType.SEGMENT||type===shaka.net.NetworkingEngine.RequestType.MANIFEST)){request.uris=request.uris.map(uri=>uri+(uri.includes('?')?'&':'?')+window.signedParams);}});
+
 async function init(){
  statusDiv.textContent="Fetching...";
  const p=new URLSearchParams(location.search);
  const res=await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${p.get('batch_id')}&childId=${p.get('lecture_id')}`);
  const data=await res.json();
- window.signedParams=data.data.signedUrl.substring(1);
- const masterUrl="https://rangexcoder-backend.onrender.com"+data.data.url+data.data.signedUrl;
+ 
+ const masterUrl=data.data.url;
+ const drmData=data.data.drmDetails.data; // format: "keyId:keyValue"
+ const [kidHex, keyHex]=drmData.split(":");
+ 
+ const kidBytes=shaka.util.Uint8Utils.fromHex(kidHex);
+ const keyBytes=shaka.util.Uint8Utils.fromHex(keyHex);
+ const kidBase64=shaka.util.Uint8Utils.toBase64(kidBytes);
+ const keyBase64=shaka.util.Uint8Utils.toBase64(keyBytes);
+
+ shakaPlayer.configure({drm:{clearKeys:{[kidBase64]:keyBase64}}});
+
  statusDiv.textContent="Loading...";
- const mpd=await (await fetch(masterUrl)).text();
- const kidMatch=mpd.match(/default_KID=["']?([a-fA-F0-9-]+)["']?/i);
- const kid=kidMatch?kidMatch[1].replace(/-/g,"").toLowerCase():null;
- const key=await(await fetch(`https://devcoderz-api.vercel.app/api/get-otp?kid=${kid}&accessToken=&refreshToken=`)).json();
- shakaPlayer.configure({drm:{clearKeys:{[kid]:key.clearKeys[kid]}}});
  await shakaPlayer.load(masterUrl);
  shakaPlayer.getVariantTracks().filter(t=>t.height).forEach(t=>{let o=document.createElement("option");o.value=t.id;o.text=t.height+"p";document.getElementById("quality").appendChild(o);});
  statusDiv.style.display="none";
 }
+
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
 
