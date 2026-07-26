@@ -89,7 +89,7 @@
 
         function openPlayerModal(id, title, lectureId) {
             document.getElementById('playerModal').classList.remove('hidden');
-            const query = `?videoId=${id}&schId=${tId}&batchId=${bId}&subjectId=${sId}&lectureId=${lectureId}&title=${encodeURIComponent(title)}`;
+            const query = `?batchId=${bId}&lectureId=${lectureId}`;
             document.getElementById('p1Btn').onclick = () => window.location.href = '/player' + query;
             document.getElementById('p2Btn').onclick = () => window.location.href = '/player2' + query;
         }
