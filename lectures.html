@@ -92,8 +92,8 @@
             document.getElementById('playerModal').classList.remove('hidden');
             const query1 = `?batchId=${bId}&lectureId=${lectureId}`;
             const query2 = `?videoId=${id}&schId=${tId}&batchId=${bId}&subjectId=${sId}&lectureId=${lectureId}&title=${encodeURIComponent(title)}`;
-            document.getElementById('p1Btn').onclick = () => window.location.href = '/player' + query1;
-            document.getElementById('p2Btn').onclick = () => window.location.href = '/player2' + query2;
+            document.getElementById('p1Btn').onclick = () => window.location.href = '/player.html' + query1;
+            document.getElementById('p2Btn').onclick = () => window.location.href = '/player2.html' + query2;
         }
 
         loadContent();
