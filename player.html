@@ -22,7 +22,7 @@ video{width:100%;height:100%;object-fit:contain}
 .progress{height:20px;display:flex;align-items:center;cursor:pointer;touch-action:none;position:relative;margin-bottom:10px}
 .progress-bg{height:7px;width:100%;background:#555;border-radius:10px}
 .progress-fill{height:100%;width:0;background:#2196f3;border-radius:10px;will-change:width}
-.thumb{position:absolute;top:50%;width:18px;height:18px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);left:0;pointer-events:none}
+.thumb{position:absolute;top:50%;width:18px;height:18px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);left:0;pointer-events:none;will-change:left}
 .time{color:#fff;font-size:11px;margin-bottom:4px;text-align:right}
 .row{display:flex;align-items:center;gap:6px;justify-content:space-between;color:#fff}
 .btn{width:40px;height:40px;border:1.5px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
@@ -58,12 +58,7 @@ video{width:100%;height:100%;object-fit:contain}
  </div>
  <div class="settings" id="settings">
   <label>Speed</label>
-  <select id="speed"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option
-value="1.75">1.75x</option><option value="2">2x</option><option
-value="2.25">2.25x</option><option
-value="2.5">2.5x</option><option
-value="2.75">2.75x</option><option
-value="3">3x</option><option value="4">4x</option></select>
+  <select id="speed"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option><option value="2.25">2.25x</option><option value="2.5">2.5x</option><option value="2.75">2.75x</option><option value="3">3x</option><option value="4">4x</option></select>
   <label>Quality</label><select id="quality"><option value="-1">Auto</option></select>
  </div>
 </div>
@@ -76,7 +71,7 @@ shakaPlayer.getNetworkingEngine().registerRequestFilter((type,request)=>{if(wind
 async function init(){
  statusDiv.textContent="Fetching...";
  const p=new URLSearchParams(location.search);
- const res=await fetch(`https://devcoderz-api.vercel.app/api/video-url?batchId=${p.get('batch_id')}&subjectId=${p.get('subject_id')}&childId=${p.get('video_id')}&videoId=${p.get('lecture_id')}&accessToken=&refreshToken=`);
+ const res=await fetch(`https://api.pimaxer.in/v1/videos/video-url-details?parentId=${p.get('batch_id')}&childId=${p.get('lecture_id')}`);
  const data=await res.json();
  window.signedParams=data.data.signedUrl.substring(1);
  const masterUrl="https://rangexcoder-backend.onrender.com"+data.data.url+data.data.signedUrl;
@@ -92,12 +87,41 @@ async function init(){
 }
 function show(){document.getElementById("controls").classList.remove("hide");clearTimeout(hideTimer);hideTimer=setTimeout(()=>document.getElementById("controls").classList.add("hide"),3000);}
 document.getElementById("continueBtn").onclick=e=>{document.getElementById("tgPopup").style.display="none";init();};
-video.ontimeupdate=()=>{if(!isDragging){let p=(video.currentTime/video.duration)*100||0;requestAnimationFrame(()=>{document.getElementById("bar").style.width=p+"%";document.getElementById("thumb").style.left=p+"%";document.getElementById("time").textContent=fmt(video.currentTime)+" / "+fmt(video.duration);});}};
+
+function updateProgressUI(percent, currentTimeVal) {
+ requestAnimationFrame(()=>{
+  document.getElementById("bar").style.width=percent+"%";
+  document.getElementById("thumb").style.left=percent+"%";
+  document.getElementById("time").textContent=fmt(currentTimeVal)+" / "+fmt(video.duration || 0);
+ });
+}
+
+video.ontimeupdate=()=>{
+ if(!isDragging && video.duration){
+  let p=(video.currentTime/video.duration)*100||0;
+  updateProgressUI(p, video.currentTime);
+ }
+};
+
 function fmt(s){let h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);return [h,m,sec].map(v=>(v<10?"0"+v:v)).join(":");}
-const seek=(e)=>{let rect=document.getElementById("progress").getBoundingClientRect();let pos=Math.max(0,Math.min(1,((e.clientX||(e.touches?e.touches[0].clientX:0))-rect.left)/rect.width));video.currentTime=pos*video.duration;};
-document.getElementById("progress").addEventListener("pointerdown",e=>{isDragging=true;seek(e);});
-window.addEventListener("pointermove",e=>{if(isDragging)seek(e);});
-window.addEventListener("pointerup",()=>{isDragging=false;});
+
+const seek=(e)=>{
+ let rect=document.getElementById("progress").getBoundingClientRect();
+ let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+ let pos=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+ if(video.duration){
+  let currentTimeVal = pos * video.duration;
+  updateProgressUI(pos * 100, currentTimeVal);
+  video.currentTime = currentTimeVal;
+ }
+};
+
+const progressEl = document.getElementById("progress");
+progressEl.addEventListener("pointerdown",e=>{isDragging=true; progressEl.setPointerCapture(e.pointerId); seek(e);});
+progressEl.addEventListener("pointermove",e=>{if(isDragging) seek(e);});
+progressEl.addEventListener("pointerup",e=>{if(isDragging){isDragging=false; try{progressEl.releasePointerCapture(e.pointerId);}catch(err){}}});
+progressEl.addEventListener("pointercancel",e=>{if(isDragging){isDragging=false; try{progressEl.releasePointerCapture(e.pointerId);}catch(err){}}});
+
 document.getElementById("play").onclick=()=>video.paused?video.play():video.pause();
 document.getElementById("back").onclick=()=>video.currentTime-=10;
 document.getElementById("fwd").onclick=()=>video.currentTime+=10;
