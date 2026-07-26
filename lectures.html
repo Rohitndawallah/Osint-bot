@@ -59,8 +59,9 @@
                     const div = document.createElement('div');
                     div.className = "bg-white p-4 mb-3 rounded-xl border flex items-center justify-between";
                     if (currentTab === 'videos') {
+                        const lId = item.lectureId || item.id || item._id;
                         div.innerHTML = `<div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${item.topic || 'Untitled'}</h3></div>
-                                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${item._id}', '${(item.topic||'').replace(/'/g, "\\'")}', '${item.lectureId || ''}')">Watch</button>`;
+                                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${item._id}', '${(item.topic||'').replace(/'/g, "\\'")}', '${lId}')">Watch</button>`;
                     } else {
                         const hw = (item.homeworkIds || [])[0];
                         const fileUrl = hw && hw.attachmentIds && hw.attachmentIds.length > 0 ? (hw.attachmentIds[0].baseUrl + hw.attachmentIds[0].key) : '#';
